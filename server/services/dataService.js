@@ -5,16 +5,25 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "..", "..");
-const generatedDir = process.env.DATA_DIR
+const runtimeGeneratedDir = process.env.DATA_DIR
   ? path.join(path.resolve(process.env.DATA_DIR), "generated")
   : path.join(projectRoot, "server", "data", "generated");
-const provinceScoreRankPath = path.join(generatedDir, "provinceScoreRank.json");
-const universityMajorLinesPath = path.join(generatedDir, "universityMajorLines.json");
+const bundledGeneratedDir = path.join(projectRoot, "server", "data", "generated");
+
+const provinceScoreRankCandidates = [
+  path.join(runtimeGeneratedDir, "provinceScoreRank.json"),
+  path.join(bundledGeneratedDir, "provinceScoreRank.json")
+];
+
+const universityMajorLinesCandidates = [
+  path.join(runtimeGeneratedDir, "universityMajorLines.json"),
+  path.join(bundledGeneratedDir, "universityMajorLines.json")
+];
 
 export function loadGeneratedGaokaoData() {
   return {
-    provinceScoreRank: readJsonSafely(provinceScoreRankPath, []),
-    universityMajorLines: readJsonSafely(universityMajorLinesPath, [])
+    provinceScoreRank: readFirstJson(provinceScoreRankCandidates, []),
+    universityMajorLines: readFirstJson(universityMajorLinesCandidates, [])
   };
 }
 
@@ -78,4 +87,15 @@ function readJsonSafely(filePath, fallback) {
   } catch {
     return fallback;
   }
+}
+
+function readFirstJson(filePaths, fallback) {
+  for (const filePath of filePaths) {
+    const data = readJsonSafely(filePath, null);
+    if (Array.isArray(data) && data.length > 0) {
+      return data;
+    }
+  }
+
+  return fallback;
 }

@@ -8,21 +8,19 @@
 
 1. 把项目推送到 GitHub
 2. 登录 [Render](https://render.com/)
-3. 新建 Web Service
-4. 连接 GitHub 仓库
-5. Render 会自动识别根目录 `render.yaml`
-6. 配置环境变量：
-   - `DATA_DIR`：推荐 `/var/data/gaokao`
+3. 点击 `New +`
+4. 选择 `Blueprint`
+5. 连接 GitHub 仓库 `anlovesy/GaokaoAPP`
+6. 选择默认分支 `main`
+7. Render 会自动识别根目录 `render.yaml`
+8. 确认服务名、地区、套餐后点击创建
+9. 在 Render 控制台补充生产环境变量：
    - `ADMIN_USERNAME`
    - `ADMIN_PASSWORD`
    - `OPENAI_API_KEY`
    - `DEEPSEEK_API_KEY`
    - `DASHSCOPE_API_KEY`
-   - `OPENAI_MODEL`
-   - `DEEPSEEK_MODEL`
-   - `DASHSCOPE_MODEL`
-   - `DASHSCOPE_BASE_URL`
-7. 部署完成后获得公网链接
+10. 等待部署完成后获得公网链接
 
 默认后台账号建议只在首次启动时使用，部署后立即改为你自己的安全密码。
 
@@ -30,8 +28,11 @@
 
 - 健康检查：`/api/health`
 - Node 24
+- 自动随 GitHub 提交重新部署
 - 持久化磁盘：挂载到 `/var/data`
 - 持久化数据目录：`/var/data/gaokao`
+- 默认内置广东 2025 真实数据，可直接启动
+- 可选接入 OpenAI / DeepSeek / 通义千问
 
 这意味着部署后以下内容可以持久保存：
 
@@ -66,3 +67,13 @@ docker run -d -p 3001:3001 --env-file .env gaokao-planner-agent
 - 手机和电脑端响应式访问
 - 公网环境直接访问
 - 多模型环境变量切换
+
+## 上线后的首次检查
+
+部署完成后，建议依次检查：
+
+1. 打开首页，确认表单、聊天区和后台登录区能正常显示
+2. 访问 `/api/health`，确认返回 `ok: true`
+3. 访问 `/api/meta/data-status`，确认能看到 `2025`、`广东`、`历史/物理`
+4. 使用后台账号登录，确认历史记录和数据上传页面可用
+5. 如果要启用聊天式 AI 顾问，再补充至少一个大模型 API Key
