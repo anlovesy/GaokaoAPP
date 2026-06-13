@@ -6,8 +6,13 @@ import { parseCsv } from "./csvService.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "..", "..");
-const importDir = path.join(projectRoot, "data", "import");
-const generatedDir = path.join(projectRoot, "server", "data", "generated");
+const dataRoot = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : projectRoot;
+const importDir = process.env.DATA_DIR
+  ? path.join(dataRoot, "imports")
+  : path.join(projectRoot, "data", "import");
+const generatedDir = process.env.DATA_DIR
+  ? path.join(dataRoot, "generated")
+  : path.join(projectRoot, "server", "data", "generated");
 
 const provinceScoreRankOutput = path.join(generatedDir, "provinceScoreRank.json");
 const universityMajorLinesOutput = path.join(generatedDir, "universityMajorLines.json");

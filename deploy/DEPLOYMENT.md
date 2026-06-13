@@ -12,6 +12,7 @@
 4. 连接 GitHub 仓库
 5. Render 会自动识别根目录 `render.yaml`
 6. 配置环境变量：
+   - `DATA_DIR`：推荐 `/var/data/gaokao`
    - `ADMIN_USERNAME`
    - `ADMIN_PASSWORD`
    - `OPENAI_API_KEY`
@@ -24,6 +25,21 @@
 7. 部署完成后获得公网链接
 
 默认后台账号建议只在首次启动时使用，部署后立即改为你自己的安全密码。
+
+### 当前 Render 配置已包含
+
+- 健康检查：`/api/health`
+- Node 24
+- 持久化磁盘：挂载到 `/var/data`
+- 持久化数据目录：`/var/data/gaokao`
+
+这意味着部署后以下内容可以持久保存：
+
+- 后台登录用户与令牌
+- 历史志愿记录
+- 聊天记录
+- 后台上传导入的真实 CSV
+- 生成后的结构化数据
 
 ## 推荐方案二：Docker + 云服务器
 

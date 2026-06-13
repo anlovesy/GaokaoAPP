@@ -5,7 +5,9 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "..", "..");
-const generatedDir = path.join(projectRoot, "server", "data", "generated");
+const generatedDir = process.env.DATA_DIR
+  ? path.join(path.resolve(process.env.DATA_DIR), "generated")
+  : path.join(projectRoot, "server", "data", "generated");
 const provinceScoreRankPath = path.join(generatedDir, "provinceScoreRank.json");
 const universityMajorLinesPath = path.join(generatedDir, "universityMajorLines.json");
 

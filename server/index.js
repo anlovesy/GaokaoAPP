@@ -117,6 +117,44 @@ app.get("/api/meta/data-status", (_request, response) => {
   });
 });
 
+app.get("/api/meta/upload-template", (request, response) => {
+  const datasetType = String(request.query.datasetType || "province_score_rank");
+
+  if (datasetType === "university_major_lines") {
+    response.json({
+      ok: true,
+      data: {
+        datasetType,
+        fileNameExample: "university_major_lines_2025_guangdong_physics.csv",
+        headers: [
+          "province",
+          "year",
+          "track",
+          "university",
+          "major",
+          "min_score",
+          "min_rank",
+          "batch",
+          "admission_count",
+          "subject_requirement",
+          "tuition",
+          "notes"
+        ]
+      }
+    });
+    return;
+  }
+
+  response.json({
+    ok: true,
+    data: {
+      datasetType: "province_score_rank",
+      fileNameExample: "province_score_rank_2025_physics.csv",
+      headers: ["province", "year", "track", "score", "rank"]
+    }
+  });
+});
+
 app.get("/api/admin/history", (request, response) => {
   const user = resolveUser(request);
   if (!user) {
@@ -208,7 +246,9 @@ app.post("/api/admin/upload", (request, response) => {
       ok: true,
       data: {
         savedPath,
-        importResult: result
+        importResult: result,
+        importedDatasetType: payload.datasetType,
+        importedRowCount: rowCount
       }
     });
   } catch (error) {

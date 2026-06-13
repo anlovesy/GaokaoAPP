@@ -7,7 +7,9 @@ import { DatabaseSync } from "node:sqlite";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "..", "..");
-const storageDir = path.join(projectRoot, "server", "storage");
+const storageDir = process.env.DATA_DIR
+  ? path.resolve(process.env.DATA_DIR)
+  : path.join(projectRoot, "server", "storage");
 const dbPath = path.join(storageDir, "app.db");
 
 fs.mkdirSync(storageDir, { recursive: true });

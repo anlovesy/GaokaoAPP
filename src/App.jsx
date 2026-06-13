@@ -36,6 +36,7 @@ function App() {
     content: ""
   });
   const [uploadMessage, setUploadMessage] = useState("");
+  const [uploadTemplate, setUploadTemplate] = useState(null);
 
   const selectedInterests = useMemo(() => {
     return interestOptions.filter((item) => formState.interests.includes(item.id));
@@ -50,6 +51,10 @@ function App() {
       fetchHistory(authToken);
     }
   }, [authToken]);
+
+  useEffect(() => {
+    fetchUploadTemplate(uploadState.datasetType);
+  }, [uploadState.datasetType]);
 
   async function fetchMeta() {
     try {
@@ -70,6 +75,18 @@ function App() {
       }
     } catch {
       setProviders([]);
+    }
+  }
+
+  async function fetchUploadTemplate(datasetType) {
+    try {
+      const response = await fetch(`/api/meta/upload-template?datasetType=${datasetType}`);
+      const payload = await response.json();
+      if (payload.ok) {
+        setUploadTemplate(payload.data);
+      }
+    } catch {
+      setUploadTemplate(null);
     }
   }
 
@@ -219,7 +236,9 @@ function App() {
         throw new Error(payload.error || "上传导入失败");
       }
 
-      setUploadMessage("上传并导入成功");
+      setUploadMessage(
+        `上传并导入成功：${payload.data.importedDatasetType}，累计导入 ${payload.data.importedRowCount} 条记录`
+      );
       setUploadState((current) => ({
         ...current,
         fileName: "",
@@ -709,6 +728,14 @@ function App() {
                 placeholder="例如 university_major_lines_2025.csv"
               />
             </label>
+            <div className="info-card">
+              <h4>推荐文件名</h4>
+              <p>{uploadTemplate?.fileNameExample || "加载中..."}</p>
+              <p className="muted">
+                字段顺序：
+                {uploadTemplate?.headers?.join(", ") || "加载中..."}
+              </p>
+            </div>
             <label>
               <span>本地 CSV 文件</span>
               <input type="file" accept=".csv,text/csv" onChange={handleChooseUploadFile} />

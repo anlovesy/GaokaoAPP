@@ -94,6 +94,7 @@ C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\depende
 
 ```env
 PORT=3001
+DATA_DIR=
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=admin123456
 
@@ -107,6 +108,12 @@ DASHSCOPE_API_KEY=
 DASHSCOPE_MODEL=qwen-plus
 DASHSCOPE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 ```
+
+说明：
+
+- 本地开发可不设置 `DATA_DIR`
+- 在 Render 上建议配置 `DATA_DIR=/var/data/gaokao`
+- 该目录将用于持久化数据库、导入文件和生成后的数据文件
 
 ## 关键目录
 
@@ -127,5 +134,12 @@ deploy/                        部署说明
 
 - [render.yaml](D:\agent\study\GaokaoApp\render.yaml)
 - [DEPLOYMENT.md](D:\agent\study\GaokaoApp\deploy\DEPLOYMENT.md)
+
+当前 Render 配置已包含：
+
+- `healthCheckPath: /api/health`
+- Node 24 运行环境
+- `/var/data` 持久化磁盘
+- `DATA_DIR=/var/data/gaokao`
 
 将项目推送到 GitHub 后，可直接在 Render 上创建 Web Service 并接入仓库部署。

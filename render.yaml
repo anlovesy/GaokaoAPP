@@ -4,7 +4,14 @@ services:
     env: node
     buildCommand: npm install && npm run build
     startCommand: npm start
+    healthCheckPath: /api/health
     autoDeploy: true
     envVars:
       - key: NODE_VERSION
         value: 24
+      - key: DATA_DIR
+        value: /var/data/gaokao
+    disk:
+      name: gaokao-data
+      mountPath: /var/data
+      sizeGB: 2
