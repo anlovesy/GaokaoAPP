@@ -1,4 +1,11 @@
 node_modules
 dist
+.git
+.gitignore
 .env
-npm-debug.log*
+.env.local
+.env.production
+server/storage
+npm-debug.log
+deploy
+data/official-downloads

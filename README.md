@@ -134,6 +134,7 @@ deploy/                        部署说明
 
 - [render.yaml](D:\agent\study\GaokaoApp\render.yaml)
 - [DEPLOYMENT.md](D:\agent\study\GaokaoApp\deploy\DEPLOYMENT.md)
+- [ZEABUR.md](D:\agent\study\GaokaoApp\deploy\ZEABUR.md)
 
 当前 Render 配置已包含：
 
@@ -143,3 +144,5 @@ deploy/                        部署说明
 - `DATA_DIR=/var/data/gaokao`
 
 将项目推送到 GitHub 后，可直接在 Render 上创建 Web Service 并接入仓库部署。
+
+如果 Render 因绑卡无法继续，推荐直接使用 Zeabur 导入当前仓库部署。

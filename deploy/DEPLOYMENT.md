@@ -42,7 +42,39 @@
 - 后台上传导入的真实 CSV
 - 生成后的结构化数据
 
-## 推荐方案二：Docker + 云服务器
+## 推荐方案二：Zeabur
+
+如果 Render 要求绑卡，而你暂时没有合适的国际信用卡，Zeabur 往往是更适合国内用户的替代方案。
+
+### 为什么适合当前项目
+
+- 仓库里已经有 `Dockerfile`
+- 前后端已整合为单服务
+- 默认内置广东 2025 真实数据，首次启动可直接使用
+- 后续可以继续补环境变量接入 DeepSeek / 通义千问 / OpenAI
+
+### Zeabur 部署步骤
+
+1. 登录 [Zeabur](https://zeabur.com/)
+2. 新建 Project
+3. 选择从 GitHub 导入仓库 `anlovesy/GaokaoAPP`
+4. 让平台自动识别 `Dockerfile`
+5. 在环境变量中补充：
+   - `ADMIN_USERNAME`
+   - `ADMIN_PASSWORD`
+   - `OPENAI_API_KEY`
+   - `DEEPSEEK_API_KEY`
+   - `DASHSCOPE_API_KEY`
+6. 发布并等待构建完成
+7. 使用平台分配的公网域名直接访问
+
+### Zeabur 使用建议
+
+- 如果平台支持挂载持久化存储卷，建议把 `DATA_DIR` 指向持久化目录
+- 如果暂时不挂载，应用仍然可以启动并使用内置广东 2025 数据
+- 但未挂载持久化目录时，后台历史记录、上传数据和登录令牌在重建后可能丢失
+
+## 推荐方案三：Docker + 云服务器
 
 ```bash
 docker build -t gaokao-planner-agent .

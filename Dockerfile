@@ -12,8 +12,6 @@ COPY package*.json ./
 RUN npm install --omit=dev
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/server ./server
-COPY --from=build /app/data ./data
-COPY --from=build /app/scripts ./scripts
 COPY --from=build /app/.env.example ./.env.example
 EXPOSE 3001
 CMD ["node", "server/index.js"]
