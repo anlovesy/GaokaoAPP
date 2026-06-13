@@ -27,7 +27,7 @@ function App() {
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [authToken, setAuthToken] = useState(localStorage.getItem("gaokao_auth_token") || "");
-  const [loginForm, setLoginForm] = useState({ username: "admin", password: "admin123456" });
+  const [loginForm, setLoginForm] = useState({ username: "LYYzhiyuan", password: "" });
   const [loginError, setLoginError] = useState("");
   const [historyData, setHistoryData] = useState({ plans: [], chats: [], imports: [] });
   const [uploadState, setUploadState] = useState({
@@ -366,7 +366,7 @@ function App() {
 
           <div className="hero-card">
             <strong>后台账号</strong>
-            <p>默认账号 `admin`，默认密码 `admin123456`，上线后建议立即修改。</p>
+            <p>默认账号 `LYYzhiyuan`，后台密码请通过环境变量 `ADMIN_PASSWORD` 单独设置。</p>
           </div>
         </div>
       </header>

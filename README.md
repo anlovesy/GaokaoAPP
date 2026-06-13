@@ -95,8 +95,8 @@ C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\depende
 ```env
 PORT=3001
 DATA_DIR=
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=admin123456
+ADMIN_USERNAME=LYYzhiyuan
+ADMIN_PASSWORD=CHANGE_ME_TO_A_STRONG_PASSWORD
 
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-5.5
@@ -114,6 +114,8 @@ DASHSCOPE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 - 本地开发可不设置 `DATA_DIR`
 - 在 Render 上建议配置 `DATA_DIR=/var/data/gaokao`
 - 该目录将用于持久化数据库、导入文件和生成后的数据文件
+- `ADMIN_USERNAME` 默认建议使用 `LYYzhiyuan`
+- `ADMIN_PASSWORD` 不要写弱密码，必须改成你自己的强密码
 
 ## 关键目录
 
@@ -135,6 +137,7 @@ deploy/                        部署说明
 - [render.yaml](D:\agent\study\GaokaoApp\render.yaml)
 - [DEPLOYMENT.md](D:\agent\study\GaokaoApp\deploy\DEPLOYMENT.md)
 - [ZEABUR.md](D:\agent\study\GaokaoApp\deploy\ZEABUR.md)
+- [PUBLIC_DEMO.md](D:\agent\study\GaokaoApp\deploy\PUBLIC_DEMO.md)
 
 当前 Render 配置已包含：
 
@@ -146,3 +149,5 @@ deploy/                        部署说明
 将项目推送到 GitHub 后，可直接在 Render 上创建 Web Service 并接入仓库部署。
 
 如果 Render 因绑卡无法继续，推荐直接使用 Zeabur 导入当前仓库部署。
+
+如果只是想临时生成一个公网演示链接，可以使用 [PUBLIC_DEMO.md](D:\agent\study\GaokaoApp\deploy\PUBLIC_DEMO.md) 里的开关脚本。

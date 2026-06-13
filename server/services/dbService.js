@@ -207,13 +207,30 @@ export function getImportHistory(limit = 20) {
 }
 
 function ensureDefaultAdmin() {
-  const username = process.env.ADMIN_USERNAME || "admin";
-  const password = process.env.ADMIN_PASSWORD || "admin123456";
-  const existing = db.prepare("SELECT id FROM users WHERE username = ?").get(username);
+  const username = process.env.ADMIN_USERNAME || "LYYzhiyuan";
+  const password = process.env.ADMIN_PASSWORD;
+
+  if (!password) {
+    console.warn(
+      `[auth] ADMIN_PASSWORD is not set. Bootstrap admin "${username}" was not created or updated.`
+    );
+    return;
+  }
+
+  const passwordHash = hashPassword(password);
+  const existing = db
+    .prepare("SELECT id, password_hash FROM users WHERE username = ?")
+    .get(username);
 
   if (!existing) {
     db.prepare("INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)")
-      .run(username, hashPassword(password), new Date().toISOString());
+      .run(username, passwordHash, new Date().toISOString());
+    return;
+  }
+
+  // Keep the configured bootstrap admin account in sync with current env/default settings.
+  if (existing.password_hash !== passwordHash) {
+    db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(passwordHash, existing.id);
   }
 }
 
