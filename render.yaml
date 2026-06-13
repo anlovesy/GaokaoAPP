@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: gaokao-planner-agent
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 24
