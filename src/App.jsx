@@ -27,9 +27,19 @@ function App() {
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [authToken, setAuthToken] = useState(localStorage.getItem("gaokao_auth_token") || "");
+  const [currentUser, setCurrentUser] = useState(null);
   const [loginForm, setLoginForm] = useState({ username: "LYYzhiyuan", password: "" });
   const [loginError, setLoginError] = useState("");
   const [historyData, setHistoryData] = useState({ plans: [], chats: [], imports: [] });
+  const [userList, setUserList] = useState([]);
+  const [userManagementMessage, setUserManagementMessage] = useState("");
+  const [userManagementLoading, setUserManagementLoading] = useState(false);
+  const [newUserForm, setNewUserForm] = useState({
+    username: "",
+    password: "",
+    role: "advisor"
+  });
+  const [passwordResetForm, setPasswordResetForm] = useState({});
   const [uploadState, setUploadState] = useState({
     datasetType: "province_score_rank",
     fileName: "",
@@ -48,7 +58,7 @@ function App() {
 
   useEffect(() => {
     if (authToken) {
-      fetchHistory(authToken);
+      fetchSessionData(authToken);
     }
   }, [authToken]);
 
@@ -90,6 +100,38 @@ function App() {
     }
   }
 
+  async function fetchSessionData(token) {
+    await Promise.all([fetchCurrentUser(token), fetchHistory(token)]);
+  }
+
+  async function fetchCurrentUser(token) {
+    try {
+      const response = await fetch("/api/auth/me", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const payload = await response.json();
+
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || "获取当前用户失败");
+      }
+
+      setCurrentUser(payload.data.user);
+
+      if (payload.data.user.role === "admin") {
+        await fetchUsers(token);
+      } else {
+        setUserList([]);
+      }
+    } catch {
+      setCurrentUser(null);
+      setUserList([]);
+      setAuthToken("");
+      localStorage.removeItem("gaokao_auth_token");
+    }
+  }
+
   async function fetchHistory(token) {
     try {
       const response = await fetch("/api/admin/history", {
@@ -103,6 +145,29 @@ function App() {
       }
     } catch {
       setHistoryData({ plans: [], chats: [], imports: [] });
+    }
+  }
+
+  async function fetchUsers(token = authToken) {
+    if (!token) {
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/admin/users", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const payload = await response.json();
+
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || "获取用户列表失败");
+      }
+
+      setUserList(payload.data.users);
+    } catch (fetchUsersError) {
+      setUserManagementMessage(fetchUsersError.message);
     }
   }
 
@@ -214,7 +279,7 @@ function App() {
 
       setAuthToken(payload.data.token);
       localStorage.setItem("gaokao_auth_token", payload.data.token);
-      fetchHistory(payload.data.token);
+      fetchSessionData(payload.data.token);
     } catch (loginSubmitError) {
       setLoginError(loginSubmitError.message);
     }
@@ -248,6 +313,142 @@ function App() {
       fetchHistory(authToken);
     } catch (uploadError) {
       setUploadMessage(uploadError.message);
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      if (authToken) {
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          headers: buildHeaders(authToken)
+        });
+      }
+    } catch {
+      // ignore logout network failures and clear local session anyway
+    } finally {
+      setAuthToken("");
+      setCurrentUser(null);
+      setUserList([]);
+      setHistoryData({ plans: [], chats: [], imports: [] });
+      localStorage.removeItem("gaokao_auth_token");
+    }
+  }
+
+  async function handleCreateUser(event) {
+    event.preventDefault();
+    setUserManagementMessage("");
+    setUserManagementLoading(true);
+
+    try {
+      const response = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: buildHeaders(authToken),
+        body: JSON.stringify(newUserForm)
+      });
+      const payload = await response.json();
+
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || "创建用户失败");
+      }
+
+      setNewUserForm({
+        username: "",
+        password: "",
+        role: "advisor"
+      });
+      setUserManagementMessage(`用户已创建：${payload.data.user.username}`);
+      await fetchUsers(authToken);
+    } catch (createError) {
+      setUserManagementMessage(createError.message);
+    } finally {
+      setUserManagementLoading(false);
+    }
+  }
+
+  async function handleResetUserPassword(userId) {
+    const password = passwordResetForm[userId]?.trim();
+    if (!password) {
+      setUserManagementMessage("请先输入新密码");
+      return;
+    }
+
+    setUserManagementMessage("");
+    setUserManagementLoading(true);
+
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/password`, {
+        method: "PATCH",
+        headers: buildHeaders(authToken),
+        body: JSON.stringify({ password })
+      });
+      const payload = await response.json();
+
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || "重置密码失败");
+      }
+
+      setPasswordResetForm((current) => ({
+        ...current,
+        [userId]: ""
+      }));
+      setUserManagementMessage(`密码已重置：${payload.data.user.username}`);
+    } catch (resetError) {
+      setUserManagementMessage(resetError.message);
+    } finally {
+      setUserManagementLoading(false);
+    }
+  }
+
+  async function handleChangeUserRole(userId, role) {
+    setUserManagementMessage("");
+    setUserManagementLoading(true);
+
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/role`, {
+        method: "PATCH",
+        headers: buildHeaders(authToken),
+        body: JSON.stringify({ role })
+      });
+      const payload = await response.json();
+
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || "更新角色失败");
+      }
+
+      setUserManagementMessage(`角色已更新：${payload.data.user.username}`);
+      await fetchUsers(authToken);
+      if (currentUser?.id === userId) {
+        await fetchCurrentUser(authToken);
+      }
+    } catch (roleError) {
+      setUserManagementMessage(roleError.message);
+    } finally {
+      setUserManagementLoading(false);
+    }
+  }
+
+  async function handleDeleteUser(userId) {
+    setUserManagementMessage("");
+    setUserManagementLoading(true);
+
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: "DELETE",
+        headers: buildHeaders(authToken)
+      });
+      const payload = await response.json();
+
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || "删除用户失败");
+      }
+
+      setUserManagementMessage("用户已删除");
+      await fetchUsers(authToken);
+    } catch (deleteError) {
+      setUserManagementMessage(deleteError.message);
+    } finally {
+      setUserManagementLoading(false);
     }
   }
 
@@ -366,7 +567,10 @@ function App() {
 
           <div className="hero-card">
             <strong>后台账号</strong>
-            <p>默认账号 `LYYzhiyuan`，后台密码请通过环境变量 `ADMIN_PASSWORD` 单独设置。</p>
+            <p>
+              默认账号 `LYYzhiyuan`，后台密码请通过环境变量 `ADMIN_PASSWORD` 单独设置。
+              {currentUser ? ` 当前登录：${currentUser.username}（${currentUser.role}）` : ""}
+            </p>
           </div>
         </div>
       </header>
@@ -665,6 +869,11 @@ function App() {
             <button className="secondary-btn" type="submit">
               {authToken ? "已登录，可刷新历史记录" : "登录后台"}
             </button>
+            {authToken ? (
+              <button className="ghost-btn" type="button" onClick={handleLogout}>
+                退出登录
+              </button>
+            ) : null}
             {loginError ? <p className="error-text">{loginError}</p> : null}
           </form>
 
@@ -756,6 +965,115 @@ function App() {
             </button>
             {uploadMessage ? <p className="muted">{uploadMessage}</p> : null}
           </form>
+
+          {currentUser?.role === "admin" ? (
+            <section className="result-section">
+              <h3>多用户管理</h3>
+              <form className="planner-form" onSubmit={handleCreateUser}>
+                <div className="field-grid">
+                  <label>
+                    <span>新用户名</span>
+                    <input
+                      value={newUserForm.username}
+                      onChange={(event) =>
+                        setNewUserForm((current) => ({ ...current, username: event.target.value }))
+                      }
+                      placeholder="例如 advisor_guangdong"
+                    />
+                  </label>
+                  <label>
+                    <span>初始密码</span>
+                    <input
+                      type="password"
+                      value={newUserForm.password}
+                      onChange={(event) =>
+                        setNewUserForm((current) => ({ ...current, password: event.target.value }))
+                      }
+                      placeholder="至少 8 位"
+                    />
+                  </label>
+                </div>
+                <label>
+                  <span>角色</span>
+                  <select
+                    value={newUserForm.role}
+                    onChange={(event) =>
+                      setNewUserForm((current) => ({ ...current, role: event.target.value }))
+                    }
+                  >
+                    <option value="advisor">顾问</option>
+                    <option value="admin">管理员</option>
+                  </select>
+                </label>
+                <button className="secondary-btn" type="submit" disabled={userManagementLoading}>
+                  {userManagementLoading ? "处理中..." : "创建用户"}
+                </button>
+                {userManagementMessage ? <p className="muted">{userManagementMessage}</p> : null}
+              </form>
+
+              <div className="user-admin-grid">
+                {userList.map((user) => (
+                  <article key={user.id} className="info-card user-card">
+                    <div className="user-card-head">
+                      <div>
+                        <h4>{user.username}</h4>
+                        <p className="muted">
+                          角色：{user.role} · 创建时间：{new Date(user.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                      {user.isBootstrapAdmin ? <span className="summary-chip">默认管理员</span> : null}
+                    </div>
+
+                    <label>
+                      <span>修改角色</span>
+                      <select
+                        value={user.role}
+                        onChange={(event) => handleChangeUserRole(user.id, event.target.value)}
+                        disabled={userManagementLoading}
+                      >
+                        <option value="advisor">顾问</option>
+                        <option value="admin">管理员</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      <span>重置密码</span>
+                      <input
+                        type="password"
+                        value={passwordResetForm[user.id] || ""}
+                        onChange={(event) =>
+                          setPasswordResetForm((current) => ({
+                            ...current,
+                            [user.id]: event.target.value
+                          }))
+                        }
+                        placeholder="输入新密码后点击按钮"
+                      />
+                    </label>
+
+                    <div className="user-card-actions">
+                      <button
+                        className="secondary-btn"
+                        type="button"
+                        onClick={() => handleResetUserPassword(user.id)}
+                        disabled={userManagementLoading}
+                      >
+                        重置密码
+                      </button>
+                      <button
+                        className="danger-btn"
+                        type="button"
+                        onClick={() => handleDeleteUser(user.id)}
+                        disabled={userManagementLoading || user.id === currentUser.id}
+                      >
+                        删除用户
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           <section className="result-section">
             <h3>最近方案</h3>

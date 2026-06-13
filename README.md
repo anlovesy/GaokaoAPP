@@ -138,6 +138,7 @@ deploy/                        部署说明
 - [DEPLOYMENT.md](D:\agent\study\GaokaoApp\deploy\DEPLOYMENT.md)
 - [ZEABUR.md](D:\agent\study\GaokaoApp\deploy\ZEABUR.md)
 - [PUBLIC_DEMO.md](D:\agent\study\GaokaoApp\deploy\PUBLIC_DEMO.md)
+- [SERVER_PRODUCTION.md](D:\agent\study\GaokaoApp\deploy\SERVER_PRODUCTION.md)
 
 当前 Render 配置已包含：
 
@@ -151,3 +152,5 @@ deploy/                        部署说明
 如果 Render 因绑卡无法继续，推荐直接使用 Zeabur 导入当前仓库部署。
 
 如果只是想临时生成一个公网演示链接，可以使用 [PUBLIC_DEMO.md](D:\agent\study\GaokaoApp\deploy\PUBLIC_DEMO.md) 里的开关脚本。
+
+如果要长期正式商用，建议直接参考 [SERVER_PRODUCTION.md](D:\agent\study\GaokaoApp\deploy\SERVER_PRODUCTION.md) 做国内服务器部署。

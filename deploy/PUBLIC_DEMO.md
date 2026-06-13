@@ -49,7 +49,9 @@ https://xxxxxx.trycloudflare.com
 
 ## 如何自定义后台账号密码
 
-默认脚本里给的是演示用途账号密码，正式对外演示前，建议你先在命令行里设置自己的强密码：
+脚本默认用户名会使用 `LYYzhiyuan`。如果你没有提前设置密码，脚本启动时会主动提示你输入本次公网演示密码。
+
+你也可以提前在命令行里设置自己的强密码：
 
 ```powershell
 $env:GAOKAO_DEMO_ADMIN_USERNAME="your_admin"
@@ -57,12 +59,12 @@ $env:GAOKAO_DEMO_ADMIN_PASSWORD="your_strong_password"
 cmd /c D:\agent\study\GaokaoApp\tools\start-public-demo.cmd
 ```
 
-如果你直接双击脚本而没有先设置环境变量，脚本会使用内置演示账号：
+如果你直接双击脚本而没有先设置环境变量：
 
 - 用户名默认会使用 `LYYzhiyuan`
-- 但密码不会自动给默认值
+- 密码会在启动时提示你现场输入
 
-也就是说，若你没有先设置 `GAOKAO_DEMO_ADMIN_PASSWORD`，脚本会直接提示并停止，避免把弱密码公开到外网。
+这样可以避免把弱密码写死在脚本里。
 
 ## 常见问题
 

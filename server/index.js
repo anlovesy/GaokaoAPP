@@ -10,13 +10,19 @@ import { generateAdvisorReply, listAvailableProviders } from "./services/llmServ
 import { getDataStatus } from "./services/dataService.js";
 import {
   authenticateUser,
-  getUserFromToken,
-  getPlanHistory,
+  createUser,
+  deleteUser,
   getChatHistory,
   getImportHistory,
-  savePlanHistory,
+  getPlanHistory,
+  getUserFromToken,
+  listUsers,
+  revokeToken,
   saveChatHistory,
-  saveImportHistory
+  saveImportHistory,
+  savePlanHistory,
+  updateUserPassword,
+  updateUserRole
 } from "./services/dbService.js";
 import { importAllCsvFiles, saveImportFile } from "./services/importService.js";
 
@@ -71,6 +77,20 @@ const uploadSchema = z.object({
   content: z.string().min(1)
 });
 
+const createUserSchema = z.object({
+  username: z.string().min(3).max(32),
+  password: z.string().min(8).max(64),
+  role: z.enum(["admin", "advisor"]).default("advisor")
+});
+
+const updatePasswordSchema = z.object({
+  password: z.string().min(8).max(64)
+});
+
+const updateRoleSchema = z.object({
+  role: z.enum(["admin", "advisor"])
+});
+
 app.get("/api/health", (_request, response) => {
   response.json({
     ok: true,
@@ -101,6 +121,27 @@ app.post("/api/auth/login", (request, response) => {
       error: error instanceof Error ? error.message : "登录失败"
     });
   }
+});
+
+app.get("/api/auth/me", (request, response) => {
+  const user = requireAuthUser(request, response);
+  if (!user) {
+    return;
+  }
+
+  response.json({
+    ok: true,
+    data: {
+      user
+    }
+  });
+});
+
+app.post("/api/auth/logout", (request, response) => {
+  revokeToken(resolveToken(request));
+  response.json({
+    ok: true
+  });
 });
 
 app.get("/api/meta/providers", (_request, response) => {
@@ -156,27 +197,145 @@ app.get("/api/meta/upload-template", (request, response) => {
 });
 
 app.get("/api/admin/history", (request, response) => {
-  const user = resolveUser(request);
+  const user = requireAuthUser(request, response);
   if (!user) {
-    response.status(401).json({ ok: false, error: "未登录" });
     return;
   }
 
   response.json({
     ok: true,
     data: {
-      plans: getPlanHistory(),
-      chats: getChatHistory(),
-      imports: getImportHistory()
+      plans: getPlanHistory({ userId: user.id, isAdmin: isAdmin(user) }),
+      chats: getChatHistory({ userId: user.id, isAdmin: isAdmin(user) }),
+      imports: getImportHistory({ userId: user.id, isAdmin: isAdmin(user) })
     }
   });
+});
+
+app.get("/api/admin/users", (request, response) => {
+  const user = requireAdminUser(request, response);
+  if (!user) {
+    return;
+  }
+
+  response.json({
+    ok: true,
+    data: {
+      users: listUsers()
+    }
+  });
+});
+
+app.post("/api/admin/users", (request, response) => {
+  const user = requireAdminUser(request, response);
+  if (!user) {
+    return;
+  }
+
+  try {
+    const payload = createUserSchema.parse(request.body);
+    const createdUser = createUser(payload);
+
+    response.json({
+      ok: true,
+      data: {
+        user: createdUser
+      }
+    });
+  } catch (error) {
+    response.status(400).json({
+      ok: false,
+      error: error instanceof Error ? error.message : "创建用户失败"
+    });
+  }
+});
+
+app.patch("/api/admin/users/:id/password", (request, response) => {
+  const user = requireAdminUser(request, response);
+  if (!user) {
+    return;
+  }
+
+  try {
+    const targetUserId = parseUserId(request.params.id);
+    const payload = updatePasswordSchema.parse(request.body);
+    const updatedUser = updateUserPassword(targetUserId, payload.password);
+
+    response.json({
+      ok: true,
+      data: {
+        user: updatedUser
+      }
+    });
+  } catch (error) {
+    response.status(400).json({
+      ok: false,
+      error: error instanceof Error ? error.message : "重置密码失败"
+    });
+  }
+});
+
+app.patch("/api/admin/users/:id/role", (request, response) => {
+  const user = requireAdminUser(request, response);
+  if (!user) {
+    return;
+  }
+
+  try {
+    const targetUserId = parseUserId(request.params.id);
+    const payload = updateRoleSchema.parse(request.body);
+
+    if (targetUserId === user.id && payload.role !== "admin") {
+      throw new Error("当前管理员不能取消自己的管理员权限");
+    }
+
+    const updatedUser = updateUserRole(targetUserId, payload.role);
+
+    response.json({
+      ok: true,
+      data: {
+        user: updatedUser
+      }
+    });
+  } catch (error) {
+    response.status(400).json({
+      ok: false,
+      error: error instanceof Error ? error.message : "更新角色失败"
+    });
+  }
+});
+
+app.delete("/api/admin/users/:id", (request, response) => {
+  const user = requireAdminUser(request, response);
+  if (!user) {
+    return;
+  }
+
+  try {
+    const targetUserId = parseUserId(request.params.id);
+    if (targetUserId === user.id) {
+      throw new Error("不能删除当前登录账号");
+    }
+
+    deleteUser(targetUserId);
+
+    response.json({
+      ok: true
+    });
+  } catch (error) {
+    response.status(400).json({
+      ok: false,
+      error: error instanceof Error ? error.message : "删除用户失败"
+    });
+  }
 });
 
 app.post("/api/planner/recommend", async (request, response) => {
   try {
     const payload = requestSchema.parse(request.body);
     const plan = await generateVolunteerPlan(payload);
-    const user = resolveUser(request);
+    const user = getUserFromRequest(request);
+
     savePlanHistory({
       userId: user?.id,
       profile: payload,
@@ -199,7 +358,8 @@ app.post("/api/chat/advisor", async (request, response) => {
   try {
     const payload = chatSchema.parse(request.body);
     const reply = await generateAdvisorReply(payload);
-    const user = resolveUser(request);
+    const user = getUserFromRequest(request);
+
     saveChatHistory({
       userId: user?.id,
       provider: payload.provider,
@@ -220,9 +380,8 @@ app.post("/api/chat/advisor", async (request, response) => {
 });
 
 app.post("/api/admin/upload", (request, response) => {
-  const user = resolveUser(request);
+  const user = requireAdminUser(request, response);
   if (!user) {
-    response.status(401).json({ ok: false, error: "未登录" });
     return;
   }
 
@@ -282,8 +441,48 @@ app.listen(port, () => {
   console.log(`Gaokao planner API running at http://localhost:${port}`);
 });
 
-function resolveUser(request) {
+function parseUserId(value) {
+  const userId = Number(value);
+  if (!Number.isInteger(userId) || userId <= 0) {
+    throw new Error("无效的用户编号");
+  }
+
+  return userId;
+}
+
+function isAdmin(user) {
+  return user?.role === "admin";
+}
+
+function resolveToken(request) {
   const header = request.headers.authorization || "";
-  const token = header.startsWith("Bearer ") ? header.slice(7) : "";
-  return getUserFromToken(token);
+  return header.startsWith("Bearer ") ? header.slice(7) : "";
+}
+
+function getUserFromRequest(request) {
+  return getUserFromToken(resolveToken(request));
+}
+
+function requireAuthUser(request, response) {
+  const user = getUserFromRequest(request);
+  if (!user) {
+    response.status(401).json({ ok: false, error: "未登录" });
+    return null;
+  }
+
+  return user;
+}
+
+function requireAdminUser(request, response) {
+  const user = requireAuthUser(request, response);
+  if (!user) {
+    return null;
+  }
+
+  if (!isAdmin(user)) {
+    response.status(403).json({ ok: false, error: "需要管理员权限" });
+    return null;
+  }
+
+  return user;
 }

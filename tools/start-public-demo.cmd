@@ -14,11 +14,11 @@ if "%GAOKAO_DEMO_ADMIN_USERNAME%"=="" (
 )
 
 if "%GAOKAO_DEMO_ADMIN_PASSWORD%"=="" (
-  echo [ERROR] 缺少 GAOKAO_DEMO_ADMIN_PASSWORD
-  echo 请先在 PowerShell 或 cmd 中设置一个强密码，再启动公网演示。
-  echo 例如：
-  echo set GAOKAO_DEMO_ADMIN_USERNAME=LYYzhiyuan
-  echo set GAOKAO_DEMO_ADMIN_PASSWORD=your_strong_password
+  set /p GAOKAO_DEMO_ADMIN_PASSWORD=请输入本次公网演示后台密码（至少 8 位）:
+)
+
+if "%GAOKAO_DEMO_ADMIN_PASSWORD%"=="" (
+  echo [ERROR] 你没有输入后台密码，已取消启动。
   pause
   exit /b 1
 )
@@ -35,6 +35,7 @@ timeout /t 8 /nobreak >nul
 
 echo.
 echo 已尝试启动完成。
+echo 本次演示后台账号：%GAOKAO_DEMO_ADMIN_USERNAME%
 echo 你可以打开以下日志查看公网链接：
 echo D:\agent\study\GaokaoApp\tools\cloudflared-public.log
 echo.

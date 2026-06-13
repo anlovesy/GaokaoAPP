@@ -275,6 +275,26 @@ fieldset {
   background: rgba(182, 83, 36, 0.1);
 }
 
+.ghost-btn,
+.danger-btn {
+  border: none;
+  border-radius: 18px;
+  padding: 14px 18px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ghost-btn {
+  color: var(--muted);
+  background: rgba(66, 46, 27, 0.06);
+}
+
+.danger-btn {
+  color: #fff8f6;
+  background: linear-gradient(135deg, #c84d37, #9f2b1b);
+}
+
 .primary-btn:disabled {
   opacity: 0.72;
   cursor: wait;
@@ -305,6 +325,29 @@ fieldset {
 .result-section {
   display: grid;
   gap: 14px;
+}
+
+.user-admin-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.user-card {
+  display: grid;
+  gap: 14px;
+}
+
+.user-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.user-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .summary-grid,
@@ -461,8 +504,13 @@ fieldset {
   }
 
   .result-head,
-  .school-head {
+  .school-head,
+  .user-card-head {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .user-card-actions {
+    width: 100%;
   }
 }

@@ -4,6 +4,8 @@ import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
 
+const USER_ROLES = ["admin", "advisor"];
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "..", "..");
@@ -63,18 +65,19 @@ db.exec(`
   );
 `);
 
+ensureUsersRoleColumn();
 ensureDefaultAdmin();
 
 export function authenticateUser(username, password) {
   const user = db
-    .prepare("SELECT id, username, password_hash, created_at FROM users WHERE username = ?")
+    .prepare(`
+      SELECT id, username, role, password_hash, created_at
+      FROM users
+      WHERE username = ?
+    `)
     .get(username);
 
-  if (!user) {
-    return null;
-  }
-
-  if (!verifyPassword(password, user.password_hash)) {
+  if (!user || !verifyPassword(password, user.password_hash)) {
     return null;
   }
 
@@ -84,12 +87,16 @@ export function authenticateUser(username, password) {
 
   return {
     token,
-    user: {
-      id: user.id,
-      username: user.username,
-      createdAt: user.created_at
-    }
+    user: normalizeUser(user)
   };
+}
+
+export function revokeToken(token) {
+  if (!token) {
+    return;
+  }
+
+  db.prepare("DELETE FROM auth_tokens WHERE token = ?").run(token);
 }
 
 export function getUserFromToken(token) {
@@ -99,20 +106,93 @@ export function getUserFromToken(token) {
 
   const record = db
     .prepare(`
-      SELECT users.id, users.username, users.created_at
+      SELECT users.id, users.username, users.role, users.created_at
       FROM auth_tokens
       JOIN users ON users.id = auth_tokens.user_id
       WHERE auth_tokens.token = ?
     `)
     .get(token);
 
-  return record
-    ? {
-        id: record.id,
-        username: record.username,
-        createdAt: record.created_at
-      }
-    : null;
+  return record ? normalizeUser(record) : null;
+}
+
+export function listUsers() {
+  return db
+    .prepare(`
+      SELECT id, username, role, created_at
+      FROM users
+      ORDER BY
+        CASE WHEN role = 'admin' THEN 0 ELSE 1 END,
+        id ASC
+    `)
+    .all()
+    .map((user) => ({
+      ...normalizeUser(user),
+      isBootstrapAdmin: user.username === getBootstrapAdminUsername()
+    }));
+}
+
+export function createUser({ username, password, role = "advisor" }) {
+  assertValidRole(role);
+
+  const existing = db.prepare("SELECT id FROM users WHERE username = ?").get(username);
+  if (existing) {
+    throw new Error("该用户名已存在");
+  }
+
+  db.prepare(`
+    INSERT INTO users (username, role, password_hash, created_at)
+    VALUES (?, ?, ?, ?)
+  `).run(username, role, hashPassword(password), new Date().toISOString());
+
+  return getUserByUsername(username);
+}
+
+export function updateUserPassword(userId, password) {
+  const user = getUserById(userId);
+  if (!user) {
+    throw new Error("用户不存在");
+  }
+
+  db.prepare("UPDATE users SET password_hash = ? WHERE id = ?")
+    .run(hashPassword(password), userId);
+
+  db.prepare("DELETE FROM auth_tokens WHERE user_id = ?").run(userId);
+
+  return getUserById(userId);
+}
+
+export function updateUserRole(userId, role) {
+  assertValidRole(role);
+
+  const user = getUserById(userId);
+  if (!user) {
+    throw new Error("用户不存在");
+  }
+
+  if (user.username === getBootstrapAdminUsername() && role !== "admin") {
+    throw new Error("默认管理员账号必须保留管理员权限");
+  }
+
+  db.prepare("UPDATE users SET role = ? WHERE id = ?").run(role, userId);
+  return getUserById(userId);
+}
+
+export function deleteUser(userId) {
+  const user = getUserById(userId);
+  if (!user) {
+    throw new Error("用户不存在");
+  }
+
+  if (user.username === getBootstrapAdminUsername()) {
+    throw new Error("默认管理员账号不能删除");
+  }
+
+  db.prepare("UPDATE plans SET user_id = NULL WHERE user_id = ?").run(userId);
+  db.prepare("UPDATE chat_history SET user_id = NULL WHERE user_id = ?").run(userId);
+  db.prepare("UPDATE imports SET user_id = NULL WHERE user_id = ?").run(userId);
+  db.prepare("DELETE FROM auth_tokens WHERE user_id = ?").run(userId);
+  db.prepare("DELETE FROM users WHERE id = ?").run(userId);
 }
 
 export function savePlanHistory({ userId, profile, result }) {
@@ -150,16 +230,11 @@ export function saveImportHistory({ userId, datasetType, fileName, rowCount }) {
   `).run(userId || null, datasetType, fileName, rowCount, new Date().toISOString());
 }
 
-export function getPlanHistory(limit = 20) {
-  return db
-    .prepare(`
-      SELECT id, province, score, rank_value, ai_provider, created_at, result_json
-      FROM plans
-      ORDER BY id DESC
-      LIMIT ?
-    `)
-    .all(limit)
-    .map((item) => ({
+export function getPlanHistory({ limit = 20, userId, isAdmin = false } = {}) {
+  return runHistoryQuery({
+    table: "plans",
+    columns: "id, province, score, rank_value, ai_provider, created_at, result_json",
+    mapper: (item) => ({
       id: item.id,
       province: item.province,
       score: item.score,
@@ -167,48 +242,82 @@ export function getPlanHistory(limit = 20) {
       aiProvider: item.ai_provider,
       createdAt: item.created_at,
       result: JSON.parse(item.result_json)
-    }));
+    }),
+    limit,
+    userId,
+    isAdmin
+  });
 }
 
-export function getChatHistory(limit = 20) {
-  return db
-    .prepare(`
-      SELECT id, provider, messages_json, reply_text, created_at
-      FROM chat_history
-      ORDER BY id DESC
-      LIMIT ?
-    `)
-    .all(limit)
-    .map((item) => ({
+export function getChatHistory({ limit = 20, userId, isAdmin = false } = {}) {
+  return runHistoryQuery({
+    table: "chat_history",
+    columns: "id, provider, messages_json, reply_text, created_at",
+    mapper: (item) => ({
       id: item.id,
       provider: item.provider,
       messages: JSON.parse(item.messages_json),
       replyText: item.reply_text,
       createdAt: item.created_at
-    }));
+    }),
+    limit,
+    userId,
+    isAdmin
+  });
 }
 
-export function getImportHistory(limit = 20) {
-  return db
-    .prepare(`
-      SELECT id, dataset_type, file_name, row_count, created_at
-      FROM imports
-      ORDER BY id DESC
-      LIMIT ?
-    `)
-    .all(limit)
-    .map((item) => ({
+export function getImportHistory({ limit = 20, userId, isAdmin = false } = {}) {
+  return runHistoryQuery({
+    table: "imports",
+    columns: "id, dataset_type, file_name, row_count, created_at",
+    mapper: (item) => ({
       id: item.id,
       datasetType: item.dataset_type,
       fileName: item.file_name,
       rowCount: item.row_count,
       createdAt: item.created_at
-    }));
+    }),
+    limit,
+    userId,
+    isAdmin
+  });
+}
+
+function runHistoryQuery({ table, columns, mapper, limit, userId, isAdmin }) {
+  const safeLimit = Number(limit) > 0 ? Number(limit) : 20;
+  const baseSql = `
+    SELECT ${columns}
+    FROM ${table}
+  `;
+
+  const rows = isAdmin
+    ? db.prepare(`${baseSql} ORDER BY id DESC LIMIT ?`).all(safeLimit)
+    : db.prepare(`${baseSql} WHERE user_id = ? ORDER BY id DESC LIMIT ?`).all(userId || 0, safeLimit);
+
+  return rows.map(mapper);
+}
+
+function ensureUsersRoleColumn() {
+  const columns = db.prepare("PRAGMA table_info(users)").all();
+  const hasRoleColumn = columns.some((column) => column.name === "role");
+
+  if (!hasRoleColumn) {
+    db.exec("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'advisor'");
+  }
+
+  db.prepare("UPDATE users SET role = 'advisor' WHERE role IS NULL OR role = ''").run();
 }
 
 function ensureDefaultAdmin() {
-  const username = process.env.ADMIN_USERNAME || "LYYzhiyuan";
+  const username = getBootstrapAdminUsername();
   const password = process.env.ADMIN_PASSWORD;
+  const existing = db
+    .prepare("SELECT id, username, role, password_hash FROM users WHERE username = ?")
+    .get(username);
+
+  if (existing && existing.role !== "admin") {
+    db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(existing.id);
+  }
 
   if (!password) {
     console.warn(
@@ -218,19 +327,53 @@ function ensureDefaultAdmin() {
   }
 
   const passwordHash = hashPassword(password);
-  const existing = db
-    .prepare("SELECT id, password_hash FROM users WHERE username = ?")
-    .get(username);
 
   if (!existing) {
-    db.prepare("INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)")
-      .run(username, passwordHash, new Date().toISOString());
+    db.prepare(`
+      INSERT INTO users (username, role, password_hash, created_at)
+      VALUES (?, 'admin', ?, ?)
+    `).run(username, passwordHash, new Date().toISOString());
     return;
   }
 
-  // Keep the configured bootstrap admin account in sync with current env/default settings.
-  if (existing.password_hash !== passwordHash) {
-    db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(passwordHash, existing.id);
+  if (existing.password_hash !== passwordHash || existing.role !== "admin") {
+    db.prepare("UPDATE users SET password_hash = ?, role = 'admin' WHERE id = ?")
+      .run(passwordHash, existing.id);
+  }
+}
+
+function getUserById(userId) {
+  const user = db
+    .prepare("SELECT id, username, role, created_at FROM users WHERE id = ?")
+    .get(userId);
+
+  return user ? normalizeUser(user) : null;
+}
+
+function getUserByUsername(username) {
+  const user = db
+    .prepare("SELECT id, username, role, created_at FROM users WHERE username = ?")
+    .get(username);
+
+  return user ? normalizeUser(user) : null;
+}
+
+function getBootstrapAdminUsername() {
+  return process.env.ADMIN_USERNAME || "LYYzhiyuan";
+}
+
+function normalizeUser(user) {
+  return {
+    id: user.id,
+    username: user.username,
+    role: user.role || "advisor",
+    createdAt: user.created_at
+  };
+}
+
+function assertValidRole(role) {
+  if (!USER_ROLES.includes(role)) {
+    throw new Error("无效的用户角色");
   }
 }
 
