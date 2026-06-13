@@ -1,99 +1,92 @@
 # 高考志愿智能体
 
-这是一个面向生产工作的高考志愿规划 Web 应用，支持：
+面向广东考生与家长的高考志愿规划 Web 应用，支持根据省份、选科类别、分数、位次、兴趣、职业规划和现实约束，生成可解释的大学与专业填报方案。
 
-- 手机 / 电脑端访问
-- 正式志愿推荐
-- 聊天式 AI 志愿顾问
-- OpenAI / DeepSeek / 通义千问多模型接入
-- 真实高考数据导入
-- Docker / Render 部署
+## 主要能力
 
-## 已实现能力
+- 正式志愿推荐：输出冲 / 稳 / 保志愿表
+- 聊天式 AI 志愿顾问：支持持续追问、解释推荐原因
+- 多模型接入：支持 OpenAI、DeepSeek、通义千问兼容模式
+- 真实数据导入：支持一分一段表与院校专业线导入
+- 后台管理：登录、历史记录、数据上传
+- 生产部署：支持 Docker 与 Render
 
-### 志愿规划
+## 广东 2025 真实数据
 
-- 输入学生省份、分数、位次、兴趣、职业规划、城市偏好、学费上限
-- 输出冲 / 稳 / 保正式志愿表
-- 输出备选志愿和高风险提醒
-- 支持打印版导出
+当前项目已经导入：
 
-### 聊天式 AI 顾问
+- 广东省 2025 普通类历史一分一段表
+- 广东省 2025 普通类物理一分一段表
+- 广东省 2025 本科批投档线数据
 
-- 生成方案后，可继续聊天追问
-- 支持问：
-  - 为什么推荐某个学校 / 专业
-  - 学校优先还是专业优先
-  - 怎么调成更保守 / 更冲刺
-  - 哪些专业更适合就业 / 读研
+当前导入结果：
 
-### 多模型接入
+- `provinceScoreRankCount = 1171`
+- `universityMajorLineCount = 5137`
 
-支持以下模型提供方：
+数据来源为广东省教育考试院 2025 年官方公开附件整理。
 
-- OpenAI
-- DeepSeek
-- 通义千问（DashScope Compatible Mode）
+## 技术栈
 
-### 真实数据导入
+- 前端：React + Vite
+- 后端：Express
+- 数据存储：SQLite
+- AI 接入：OpenAI Compatible API
+- 部署：Render / Docker
 
-支持导入：
+## 本地开发
 
-- 各省一分一段表
-- 各院校专业录取最低分 / 最低位次
-
-导入后，推荐会优先参考导入数据，而不是只使用演示模型。
-
-## 目录结构
-
-```text
-src/                        React 前端
-server/                     Express 后端
-server/services/            规划、聊天、多模型、数据服务
-server/data/generated/      导入后生成的 JSON 数据
-scripts/import-gaokao-data.js  数据导入脚本
-data/import/                真实 CSV 数据放置目录
-data/import-templates/      CSV 模板
-deploy/                     部署文档
-```
-
-## 本地运行
-
-### 安装依赖
+安装依赖：
 
 ```bash
 npm.cmd install
 ```
 
-### 开发模式
+启动开发环境：
 
 ```bash
 npm.cmd run dev
 ```
 
-访问：
+前端默认地址：
 
-- 前端：<http://localhost:5173>
-- 后端：<http://localhost:3001>
+- `http://localhost:5173`
 
-### 生产模式
+后端默认地址：
+
+- `http://localhost:3001`
+
+## 生产构建
+
+构建前端：
 
 ```bash
 npm.cmd run build
+```
+
+启动生产服务：
+
+```bash
 npm.cmd start
 ```
 
-访问：
+生产访问地址：
 
-- <http://localhost:3001>
+- `http://localhost:3001`
 
-## 一键批处理
+## 数据导入
 
-可直接双击：
+重新导入 CSV 数据：
 
-- [dev-start.bat](D:\agent\study\GaokaoApp\dev-start.bat) 开发启动
-- [build-prod.bat](D:\agent\study\GaokaoApp\build-prod.bat) 生产构建
-- [start-prod.bat](D:\agent\study\GaokaoApp\start-prod.bat) 生产启动
+```bash
+npm.cmd run import:data
+```
+
+生成广东 2025 官方整理数据：
+
+```bash
+C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe scripts\\prepare-guangdong-2025-data.py
+```
 
 ## 环境变量
 
@@ -101,6 +94,8 @@ npm.cmd start
 
 ```env
 PORT=3001
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=admin123456
 
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-5.5
@@ -113,86 +108,24 @@ DASHSCOPE_MODEL=qwen-plus
 DASHSCOPE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 ```
 
-说明：
-
-- 不配置模型密钥也能运行
-- 没配置时自动退回本地规则模式
-
-## 导入真实高考数据
-
-### 第一步：准备 CSV
-
-把真实数据文件放到：
+## 关键目录
 
 ```text
-data/import/
+src/                           React 前端
+server/                        Express 后端
+server/services/               推荐、聊天、导入、数据库服务
+server/data/generated/         导入后生成的 JSON 数据
+data/import/                   可导入 CSV 数据
+data/official-downloads/       官方 PDF 与中间文件
+scripts/prepare-guangdong-2025-data.py
+deploy/                        部署说明
 ```
 
-建议命名：
+## Render 部署
 
-- `province_score_rank_2026.csv`
-- `university_major_lines_2026.csv`
+仓库已包含：
 
-模板参考：
-
-- [province_score_rank_template.csv](D:\agent\study\GaokaoApp\data\import-templates\province_score_rank_template.csv)
-- [university_major_lines_template.csv](D:\agent\study\GaokaoApp\data\import-templates\university_major_lines_template.csv)
-
-### 第二步：执行导入
-
-```bash
-npm.cmd run import:data
-```
-
-导入后会生成：
-
-- [provinceScoreRank.json](D:\agent\study\GaokaoApp\server\data\generated\provinceScoreRank.json)
-- [universityMajorLines.json](D:\agent\study\GaokaoApp\server\data\generated\universityMajorLines.json)
-
-### 当前已导入的真实数据
-
-当前项目已经导入：
-
-- 广东省 2025 年普通类历史一分一段数据
-- 广东省 2025 年普通类物理一分一段数据
-
-来源：
-
-- 广东省教育考试院 2025-06-26 官方附件压缩包
-
-说明：
-
-- 目前已经接入广东 2025 位次数据
-- 但院校专业录取最低位次的 2025 全量官方结构化数据仍需继续整理或补充源文件
-
-## 发布成公网链接
-
-当前仓库已经补充：
-
-- [Dockerfile](D:\agent\study\GaokaoApp\Dockerfile)
 - [render.yaml](D:\agent\study\GaokaoApp\render.yaml)
 - [DEPLOYMENT.md](D:\agent\study\GaokaoApp\deploy\DEPLOYMENT.md)
 
-### 推荐方式
-
-1. 推到 GitHub
-2. 部署到 Render
-3. 配置环境变量
-4. 获取公网访问链接
-
-## 当前限制
-
-- 还没有用户登录系统
-- 还没有数据库持久化聊天记录和历史方案
-- 还没有后台上传界面，目前真实数据导入仍通过 CSV + 脚本完成
-- 没有直接在当前本地机器上自动生成永久公网链接，需要部署到云平台后获得外部访问地址
-
-## 下一步建议
-
-如果继续往正式产品走，最值得继续做的是：
-
-1. 增加登录、账号和历史方案保存
-2. 增加后台数据上传页
-3. 接入数据库
-4. 增加 Excel / PDF 导出
-5. 接入官方最新年度数据清洗流程
+将项目推送到 GitHub 后，可直接在 Render 上创建 Web Service 并接入仓库部署。
