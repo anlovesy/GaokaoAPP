@@ -21,6 +21,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
+    role TEXT NOT NULL DEFAULT 'advisor',
     password_hash TEXT NOT NULL,
     created_at TEXT NOT NULL
   );
@@ -63,10 +64,54 @@ db.exec(`
     created_at TEXT NOT NULL,
     FOREIGN KEY(user_id) REFERENCES users(id)
   );
+
+  CREATE TABLE IF NOT EXISTS trial_usage (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    trial_token TEXT NOT NULL,
+    action_type TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
 `);
 
 ensureUsersRoleColumn();
 ensureDefaultAdmin();
+
+export function getUsageStatsForIdentity({ userId, trialToken }) {
+  const planCount = userId
+    ? Number(
+        db.prepare("SELECT COUNT(*) AS total FROM plans WHERE user_id = ?").get(userId)?.total || 0
+      )
+    : 0;
+  const chatCount = userId
+    ? Number(
+        db.prepare("SELECT COUNT(*) AS total FROM chat_history WHERE user_id = ?").get(userId)?.total || 0
+      )
+    : 0;
+
+  const trialUsageCount = trialToken
+    ? Number(
+        db.prepare("SELECT COUNT(*) AS total FROM trial_usage WHERE trial_token = ?")
+          .get(trialToken)?.total || 0
+      )
+    : 0;
+
+  return {
+    planCount,
+    chatCount,
+    trialUsageCount
+  };
+}
+
+export function registerTrialUsage({ trialToken, actionType }) {
+  if (!trialToken) {
+    return;
+  }
+
+  db.prepare(`
+    INSERT INTO trial_usage (trial_token, action_type, created_at)
+    VALUES (?, ?, ?)
+  `).run(trialToken, actionType, new Date().toISOString());
+}
 
 export function authenticateUser(username, password) {
   const user = db

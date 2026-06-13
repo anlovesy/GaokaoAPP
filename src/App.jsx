@@ -16,6 +16,8 @@ const starterChat = [
   }
 ];
 
+const TRIAL_STORAGE_KEY = "gaokao_trial_token";
+
 function App() {
   const [formState, setFormState] = useState(defaultFormState);
   const [loading, setLoading] = useState(false);
@@ -27,6 +29,7 @@ function App() {
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [authToken, setAuthToken] = useState(localStorage.getItem("gaokao_auth_token") || "");
+  const [trialToken] = useState(() => ensureTrialToken());
   const [currentUser, setCurrentUser] = useState(null);
   const [loginForm, setLoginForm] = useState({ username: "LYYzhiyuan", password: "" });
   const [loginError, setLoginError] = useState("");
@@ -468,7 +471,8 @@ function App() {
 
   function buildHeaders(token) {
     const headers = {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      "X-Trial-Token": trialToken
     };
 
     if (token) {
@@ -570,6 +574,15 @@ function App() {
             <p>
               默认账号 `LYYzhiyuan`，后台密码请通过环境变量 `ADMIN_PASSWORD` 单独设置。
               {currentUser ? ` 当前登录：${currentUser.username}（${currentUser.role}）` : ""}
+            </p>
+          </div>
+
+          <div className="hero-card">
+            <strong>体验规则</strong>
+            <p>
+              {currentUser
+                ? "已登录账号可持续使用正式志愿推荐、顾问聊天和后台能力。"
+                : "未登录用户仅有一次正式志愿/顾问体验机会。想无限使用，请联系管理员创建账号。"}
             </p>
           </div>
         </div>
@@ -875,6 +888,11 @@ function App() {
               </button>
             ) : null}
             {loginError ? <p className="error-text">{loginError}</p> : null}
+            {!authToken ? (
+              <p className="muted">
+                游客仅可体验一次正式志愿或顾问能力。管理员创建账号后，可长期无限使用。
+              </p>
+            ) : null}
           </form>
 
           <div className="chat-status">
@@ -1107,3 +1125,18 @@ function App() {
 }
 
 export default App;
+
+function ensureTrialToken() {
+  const existing = localStorage.getItem(TRIAL_STORAGE_KEY);
+  if (existing) {
+    return existing;
+  }
+
+  const nextToken =
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `trial-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  localStorage.setItem(TRIAL_STORAGE_KEY, nextToken);
+  return nextToken;
+}

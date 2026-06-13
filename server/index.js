@@ -16,7 +16,9 @@ import {
   getImportHistory,
   getPlanHistory,
   getUserFromToken,
+  getUsageStatsForIdentity,
   listUsers,
+  registerTrialUsage,
   revokeToken,
   saveChatHistory,
   saveImportHistory,
@@ -90,6 +92,8 @@ const updatePasswordSchema = z.object({
 const updateRoleSchema = z.object({
   role: z.enum(["admin", "advisor"])
 });
+
+const TRIAL_COOKIE_NAME = "gaokao_trial_token";
 
 app.get("/api/health", (_request, response) => {
   response.json({
@@ -332,6 +336,15 @@ app.delete("/api/admin/users/:id", (request, response) => {
 
 app.post("/api/planner/recommend", async (request, response) => {
   try {
+    const access = resolveUsageAccess(request);
+    if (!access.allowed) {
+      response.status(403).json({
+        ok: false,
+        error: access.message
+      });
+      return;
+    }
+
     const payload = requestSchema.parse(request.body);
     const plan = await generateVolunteerPlan(payload);
     const user = getUserFromRequest(request);
@@ -341,6 +354,13 @@ app.post("/api/planner/recommend", async (request, response) => {
       profile: payload,
       result: plan
     });
+
+    if (!user && access.trialToken) {
+      registerTrialUsage({
+        trialToken: access.trialToken,
+        actionType: "planner"
+      });
+    }
 
     response.json({
       ok: true,
@@ -356,6 +376,15 @@ app.post("/api/planner/recommend", async (request, response) => {
 
 app.post("/api/chat/advisor", async (request, response) => {
   try {
+    const access = resolveUsageAccess(request);
+    if (!access.allowed) {
+      response.status(403).json({
+        ok: false,
+        error: access.message
+      });
+      return;
+    }
+
     const payload = chatSchema.parse(request.body);
     const reply = await generateAdvisorReply(payload);
     const user = getUserFromRequest(request);
@@ -366,6 +395,13 @@ app.post("/api/chat/advisor", async (request, response) => {
       messages: payload.messages,
       replyText: reply.reply
     });
+
+    if (!user && access.trialToken) {
+      registerTrialUsage({
+        trialToken: access.trialToken,
+        actionType: "chat"
+      });
+    }
 
     response.json({
       ok: true,
@@ -459,8 +495,54 @@ function resolveToken(request) {
   return header.startsWith("Bearer ") ? header.slice(7) : "";
 }
 
+function resolveUsageAccess(request) {
+  const user = getUserFromRequest(request);
+  if (user) {
+    return {
+      allowed: true,
+      trialToken: ""
+    };
+  }
+
+  const trialToken = getTrialToken(request);
+  if (!trialToken) {
+    return {
+      allowed: false,
+      trialToken: "",
+      message: "未登录用户需要先领取一次试用标识后才能体验。请刷新页面后重试。"
+    };
+  }
+
+  const usage = getUsageStatsForIdentity({ userId: null, trialToken });
+  if (usage.trialUsageCount >= 1) {
+    return {
+      allowed: false,
+      trialToken,
+      message: "游客账号仅可体验一次正式志愿或顾问功能。请联系管理员创建账号后继续无限使用。"
+    };
+  }
+
+  return {
+    allowed: true,
+    trialToken
+  };
+}
+
 function getUserFromRequest(request) {
   return getUserFromToken(resolveToken(request));
+}
+
+function getTrialToken(request) {
+  const cookieHeader = request.headers.cookie || "";
+  const cookies = cookieHeader.split(";").map((item) => item.trim());
+  const cookie = cookies.find((item) => item.startsWith(`${TRIAL_COOKIE_NAME}=`));
+
+  if (cookie) {
+    return decodeURIComponent(cookie.slice(TRIAL_COOKIE_NAME.length + 1));
+  }
+
+  const trialToken = String(request.headers["x-trial-token"] || "").trim();
+  return trialToken || "";
 }
 
 function requireAuthUser(request, response) {

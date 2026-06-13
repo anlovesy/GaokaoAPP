@@ -139,6 +139,7 @@ deploy/                        部署说明
 - [ZEABUR.md](D:\agent\study\GaokaoApp\deploy\ZEABUR.md)
 - [PUBLIC_DEMO.md](D:\agent\study\GaokaoApp\deploy\PUBLIC_DEMO.md)
 - [SERVER_PRODUCTION.md](D:\agent\study\GaokaoApp\deploy\SERVER_PRODUCTION.md)
+- [ACCESS_AND_USERS.md](D:\agent\study\GaokaoApp\deploy\ACCESS_AND_USERS.md)
 
 当前 Render 配置已包含：
 
@@ -154,3 +155,5 @@ deploy/                        部署说明
 如果只是想临时生成一个公网演示链接，可以使用 [PUBLIC_DEMO.md](D:\agent\study\GaokaoApp\deploy\PUBLIC_DEMO.md) 里的开关脚本。
 
 如果要长期正式商用，建议直接参考 [SERVER_PRODUCTION.md](D:\agent\study\GaokaoApp\deploy\SERVER_PRODUCTION.md) 做国内服务器部署。
+
+如果你想快速弄清楚公网演示怎么开、管理员密码从哪里来、用户如何登录、游客与正式账号有什么区别，可以直接看 [ACCESS_AND_USERS.md](D:\agent\study\GaokaoApp\deploy\ACCESS_AND_USERS.md)。
