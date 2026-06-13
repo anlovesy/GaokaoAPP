@@ -7,3 +7,6 @@ server/storage/
 tools/cloudflared.exe
 tools/*.log
 tools/launch-public-demo.cmd
+tools/*.pid
+tools/*-active-*.txt
+tools/public-demo-url.txt
