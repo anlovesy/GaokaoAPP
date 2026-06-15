@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { buildDynamicAdvisorFollowUpReply } from "./advisorFollowUpService.js";
 
 const providerCatalog = {
   openai: {
@@ -102,10 +103,19 @@ export async function generateAdvisorReply({
   const providerId = resolveProviderId(providerChoice || "auto");
 
   if (!providerId) {
+    const dynamicFollowUpReply = buildDynamicAdvisorFollowUpReply({
+      messages,
+      planningContext,
+      advisorMode,
+      currentUserMessage: [...messages].reverse().find((message) => message.role === "user")?.content || "",
+      previousAssistantContent:
+        [...messages].slice(0, -1).reverse().find((message) => message.role === "assistant")?.content || ""
+    });
+
     return {
       provider: "local",
       model: "local-fallback",
-      reply: buildLocalChatReply(messages, planningContext, advisorMode)
+      reply: dynamicFollowUpReply || buildLocalChatReply(messages, planningContext, advisorMode)
     };
   }
 
@@ -146,6 +156,13 @@ export async function generateAdvisorReply({
     .find((message) => message.role === "assistant");
   const currentUserMessage = latestUserMessage?.content || "";
   const recentMessages = messages.slice(-12);
+  const dynamicFollowUpReply = buildDynamicAdvisorFollowUpReply({
+    messages,
+    planningContext,
+    advisorMode,
+    currentUserMessage,
+    previousAssistantContent: previousAssistantMessage?.content || ""
+  });
   const followUpGuardrail = buildFollowUpGuardrail({
     currentUserMessage,
     previousAssistantContent: previousAssistantMessage?.content || ""
@@ -180,7 +197,7 @@ ${JSON.stringify(recentMessages, null, 2)}`;
   return {
     provider: providerId,
     model: getProviderModel(providerId),
-    reply: safeReply || buildLocalChatReply(messages, planningContext, advisorMode)
+    reply: safeReply || dynamicFollowUpReply || buildLocalChatReply(messages, planningContext, advisorMode)
   };
 }
 

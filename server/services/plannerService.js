@@ -251,7 +251,7 @@ function buildKeywordPool(profile, selectedInterests) {
 
 function splitText(text) {
   return String(text || "")
-    .split(/[\s,，。；、/]+/)
+    .split(/[\s,锛屻€傦紱銆?]+/)
     .map((item) => item.trim())
     .filter(Boolean);
 }
@@ -294,11 +294,12 @@ function buildDataDrivenRecommendations(profile, directions, selectedInterests, 
       item.province === profile.province &&
       Number(item.year) === Number(latestYear) &&
       (!profile.track || !item.track || item.track === profile.track) &&
-      normalizeBatch(item.batch).includes("本科")
+      normalizeBatch(item.batch).includes("鏈")
   );
 
   const preferredRows = [];
   const relaxedRows = [];
+  const relaxedPreferenceRows = [];
 
   sourceRows.forEach((row) => {
     const normalizedRow = enrichImportedRow(row, directions);
@@ -308,7 +309,19 @@ function buildDataDrivenRecommendations(profile, directions, selectedInterests, 
     const schoolMeta = matchStaticSchoolMeta(normalizedRow.university);
     const effectiveTuition = normalizedRow.tuition || schoolMeta?.tuition || 0;
 
-    if (!passesImportedConstraints(profile, normalizedRow, schoolMeta, effectiveTuition)) {
+    const strictConstraintPass = passesImportedConstraintsWithOptions(
+      profile,
+      normalizedRow,
+      schoolMeta,
+      effectiveTuition
+    );
+    const relaxedPreferencePass =
+      !strictConstraintPass &&
+      passesImportedConstraintsWithOptions(profile, normalizedRow, schoolMeta, effectiveTuition, {
+        relaxPreferences: true
+      });
+
+    if (!strictConstraintPass && !relaxedPreferencePass) {
       return;
     }
 
@@ -335,6 +348,7 @@ function buildDataDrivenRecommendations(profile, directions, selectedInterests, 
       : 0;
     const directionBonus = directionMatched ? 36 : 0;
     const cityBonus = cityMatched ? 18 : 0;
+    const softPreferenceRelaxed = relaxedPreferencePass && !strictConstraintPass;
     const employmentBonus = schoolMeta
       ? profile.majorNeeds.includes("stableEmployment")
         ? schoolMeta.employmentStability / 8
@@ -381,26 +395,39 @@ function buildDataDrivenRecommendations(profile, directions, selectedInterests, 
         majorPriorityBonus +
         cityPriorityBonus +
         lowScoreRescueBonus +
+        (softPreferenceRelaxed ? -20 : 0) +
         (normalizedRow.admissionCount > 0 ? Math.min(12, normalizedRow.admissionCount / 2) : 0),
-      reason: buildImportedReason(profile, normalizedRow, resolvedTier, schoolMeta),
+      reason: appendSoftPreferenceRelaxNote(
+        buildImportedReason(profile, normalizedRow, resolvedTier, schoolMeta),
+        profile,
+        softPreferenceRelaxed
+      ),
       admissionCount: normalizedRow.admissionCount,
       batch: normalizedRow.batch,
       notes: normalizedRow.notes,
       code: parseSchoolCode(normalizedRow.notes),
       groupName: parseGroupName(normalizedRow.notes),
-      direction: normalizedRow.direction
+      direction: normalizedRow.direction,
+      softPreferenceRelaxed
     };
 
-    if (directionMatched || cityMatched || schoolTagBonus > 0 || interestBonus > 0) {
+    if (softPreferenceRelaxed) {
+      relaxedPreferenceRows.push(item);
+    } else if (directionMatched || cityMatched || schoolTagBonus > 0 || interestBonus > 0) {
       preferredRows.push(item);
     } else {
       relaxedRows.push(item);
     }
   });
 
-  return [...preferredRows, ...relaxedRows]
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 240);
+  const strictPool = [...preferredRows, ...relaxedRows].sort((a, b) => b.score - a.score);
+  const relaxedPool = relaxedPreferenceRows.sort((a, b) => b.score - a.score);
+
+  if (!shouldBackfillRelaxedPreferenceItems(profile, strictPool.length, sourceRows.length)) {
+    return strictPool.slice(0, 240);
+  }
+
+  return [...strictPool, ...relaxedPool].slice(0, 240);
 }
 
 function scoreSchools(profile, directions, selectedInterests, generatedData) {
@@ -427,7 +454,12 @@ function scoreSchools(profile, directions, selectedInterests, generatedData) {
         const tier = resolveTier(ratio, config);
         const proximityTier = resolveExtendedTier(ratio, config);
 
-        if (!proximityTier || !passesConstraints(profile, school, major)) {
+        const strictConstraintPass = passesConstraintsWithOptions(profile, school, major);
+        const relaxedPreferencePass =
+          !strictConstraintPass &&
+          passesConstraintsWithOptions(profile, school, major, { relaxPreferences: true });
+
+        if (!proximityTier || (!strictConstraintPass && !relaxedPreferencePass)) {
           return null;
         }
 
@@ -456,6 +488,7 @@ function scoreSchools(profile, directions, selectedInterests, generatedData) {
               ? 5
               : 0;
         const lowScoreRescueBonus = profile.rank > 120000 ? 8 : 0;
+        const softPreferenceRelaxed = relaxedPreferencePass && !strictConstraintPass;
         const resolvedTier = tier || (ratio <= config.rush * 1.12 ? "冲" : "保");
 
         return {
@@ -484,8 +517,14 @@ function scoreSchools(profile, directions, selectedInterests, generatedData) {
             majorPriorityBonus +
             cityPriorityBonus +
             popularityAdjustment +
-            lowScoreRescueBonus,
-          reason: buildReason(profile, school, major, threshold, resolvedTier, historical)
+            lowScoreRescueBonus +
+            (softPreferenceRelaxed ? -16 : 0),
+          reason: appendSoftPreferenceRelaxNote(
+            buildReason(profile, school, major, threshold, resolvedTier, historical),
+            profile,
+            softPreferenceRelaxed
+          ),
+          softPreferenceRelaxed
         };
       })
     )
@@ -571,10 +610,30 @@ function buildRescueRecommendations(profile, directions, generatedData) {
       }
 
       const confidence = buildPlanConfidence(profile, threshold, candidateTier, tierMetrics);
-      const rankSafetyBonus = tierMetrics.rankGap >= 0 ? 24 : 8;
+      const idealGap =
+        candidateTier === PLAN_TIER_SAFE
+          ? Math.min(
+              Math.round((tierMetrics.bands?.safePrimaryGap || 0) * 1.08),
+              Math.round((tierMetrics.bands?.safeMaxGap || 0) * 0.68)
+            )
+          : candidateTier === PLAN_TIER_STEADY
+            ? 0
+            : -Math.round((tierMetrics.bands?.rushNegativeGap || 0) * 0.62);
+      const distancePenalty = Math.min(
+        28,
+        Math.abs(tierMetrics.rankGap - idealGap) / (candidateTier === PLAN_TIER_SAFE ? 1700 : 1200)
+      );
+      const tierBaseScore =
+        candidateTier === PLAN_TIER_SAFE ? 88 : candidateTier === PLAN_TIER_STEADY ? 90 : 84;
       const admissionCountBonus = normalizedRow.admissionCount
         ? Math.min(14, Number(normalizedRow.admissionCount) / 2)
         : 0;
+      const sourceBonus =
+        schoolMeta && schoolMeta.city && schoolMeta.city.includes("广州")
+          ? 4
+          : schoolMeta && schoolMeta.city && schoolMeta.city.includes("深圳")
+            ? 3
+            : 0;
 
       return {
         source: "rescue",
@@ -591,11 +650,11 @@ function buildRescueRecommendations(profile, directions, generatedData) {
         subjectRequirement: normalizedRow.subjectRequirement || "",
         confidence,
         score:
-          54 +
-          rankSafetyBonus +
+          tierBaseScore -
+          distancePenalty +
           admissionCountBonus +
-          Math.min(24, Math.max(-18, tierMetrics.rankGap / 1800)) +
-          (candidateTier === PLAN_TIER_SAFE ? 18 : candidateTier === PLAN_TIER_STEADY ? 10 : 2),
+          sourceBonus +
+          (candidateTier === PLAN_TIER_SAFE ? Math.min(6, confidence - 90) : Math.min(8, confidence - 72)),
         reason: `${buildImportedReason(profile, normalizedRow, candidateTier, schoolMeta)}${rescueNote}`,
         admissionCount: normalizedRow.admissionCount,
         batch: normalizedRow.batch,
@@ -615,7 +674,7 @@ function buildRescueRecommendations(profile, directions, generatedData) {
       }
       return (b.admissionCount || 0) - (a.admissionCount || 0);
     })
-    .slice(0, 160);
+    .slice(0, 320);
 }
 
 function clampNumber(value, min, max) {
@@ -623,7 +682,7 @@ function clampNumber(value, min, max) {
 }
 
 function getTierClassName(tier) {
-  return tier === "淇?" ? "safe" : tier === "绋?" ? "steady" : "rush";
+  return tier === "保" ? "safe" : tier === "稳" ? "steady" : "rush";
 }
 
 function createRankMargin(rank, ratio, min, max) {
@@ -656,19 +715,19 @@ function resolveTierMetrics(profile, threshold, config) {
   let tierSource = "strict";
 
   if (rankGap >= bands.safePrimaryGap) {
-    tier = "淇?";
+    tier = "保";
   } else if (rankGap >= -bands.steadyNegativeGap && rankGap <= bands.steadyPositiveGap) {
-    tier = "绋?";
+    tier = "稳";
   } else if (rankGap < 0 && rankGap >= -bands.rushNegativeGap) {
-    tier = "鍐?";
+    tier = "冲";
   } else if (rankGap >= bands.safeFallbackGap) {
-    tier = "淇?";
+    tier = "保";
     tierSource = "fallback";
   } else if (
     rankGap >= -Math.round(bands.steadyNegativeGap * 1.18) &&
     rankGap <= Math.round(bands.steadyPositiveGap * 1.2)
   ) {
-    tier = "绋?";
+    tier = "稳";
     tierSource = "fallback";
   }
 
@@ -754,30 +813,30 @@ function buildApplicationPlanV2(recommendations, profile, generatedData) {
     profile.score
   );
   const latestRankText = latestScoreRank?.rank
-    ? `缁撳悎 ${latestScoreRank.year} 骞?${profile.province}${profile.track}绫讳綅娆¤〃锛屽綋鍓嶅垎鏁板搴斾綅娆＄害 ${latestScoreRank.rank}銆俙
-    : "褰撳墠浣嶆涓昏渚濇嵁浣犲～鍐欑殑淇℃伅鍜屽凡瀵煎叆闄㈡牎绾挎暟鎹患鍚堝垽鏂€?;
+    ? `缂佹挸鎮?${latestScoreRank.year} 楠?${profile.province}${profile.track}缁缍呭▎陇銆冮敍灞界秼閸撳秴鍨庨弫鏉款嚠鎼存柧缍呭▎锛勫 ${latestScoreRank.rank}閵嗕繖
+    : "瑜版挸澧犳担宥嗩偧娑撴槒顩︽笟婵囧祦娴ｇ姴锝為崘娆戞畱娣団剝浼呴崪灞藉嚒鐎电厧鍙嗛梽銏＄墡缁炬寧鏆熼幑顔炬偅閸氬牆鍨介弬顓溾偓?;
   const lowScoreProfile = profile.rank > 120000;
 
   return [
     {
-      tier: "鍐?",
-      tierLabel: "鍐插埡蹇楁効",
+      tier: "閸?",
+      tierLabel: "閸愭彃鍩¤箛妤佸姽",
       tierClass: "rush",
-      explanation: `${latestRankText} 鍐插埡灞傚彧鏀鹃偅浜涘巻骞寸嚎姣斾綘褰撳墠浣嶆鏇撮珮銆佺浉瀵瑰綍鍙栨鐜囨洿浣庣殑鍘婚€夛紝鍔熻兘鏄€滃線涓婂啿鈥濓紝涓嶆槸鍏ㄩ儴鍘嬬${lowScoreProfile ? "锛涗綆鍒嗘鍏堜繚鏈锛屽啀璋堝钩鍙般€?" : "銆?"}`,
+      explanation: `${latestRankText} 閸愭彃鍩＄仦鍌氬涧閺€楣冨亝娴滄稑宸婚獮瀵稿殠濮ｆ柧缍樿ぐ鎾冲娴ｅ秵顐奸弴鎾彯閵嗕胶娴夌€电懓缍嶉崣鏍洤閻滃洦娲挎担搴ｆ畱閸樺鈧绱濋崝鐔诲厴閺勵垪鈧粌绶氭稉濠傚暱閳ユ繐绱濇稉宥嗘Ц閸忋劑鍎撮崢瀣劮${lowScoreProfile ? "閿涙稐缍嗛崚鍡橆唽閸忓牅绻氶張顒傤潠閿涘苯鍟€鐠嬪牆閽╅崣鑸偓?" : "閵?"}`,
       schools: grouped.rush
     },
     {
-      tier: "绋?",
-      tierLabel: "涓诲姏蹇楁効",
+      tier: "缁?",
+      tierLabel: "娑撹濮忚箛妤佸姽",
       tierClass: "steady",
-      explanation: `涓诲姏灞傛槸鏁翠唤琛ㄧ殑鏍稿績锛屼富瑕佹斁鍘嗗勾绾夸綅娆′笌浣犵浉瀵圭粏鍖归厤鐨勫鏍″拰涓撲笟缁勶紝鍗虫槸鈥滆兘鎶ャ€佽兘璇汇€佽兘鎺ュ彈鈥濈殑涓诲姏鍖恒€?`,
+      explanation: `娑撹濮忕仦鍌涙Ц閺佺繝鍞ょ悰銊ф畱閺嶇绺鹃敍灞煎瘜鐟曚焦鏂侀崢鍡楀嬀缁惧じ缍呭▎鈥茬瑢娴ｇ姷娴夌€靛湱绮忛崠褰掑帳閻ㄥ嫬顒熼弽鈥虫嫲娑撴挷绗熺紒鍕剁礉閸楄櫕妲搁垾婊嗗厴閹躲儯鈧浇鍏樼拠姹団偓浣藉厴閹恒儱褰堥垾婵堟畱娑撹濮忛崠鎭掆偓?`,
       schools: grouped.steady
     },
     {
-      tier: "淇?",
-      tierLabel: "淇濆簳蹇楁効",
+      tier: "娣?",
+      tierLabel: "娣囨繂绨宠箛妤佸姽",
       tierClass: "safe",
-      explanation: `淇濆簳灞傚彧鏀鹃偅浜涘巻骞寸嚎鏄庢樉浣庝簬浣犲綋鍓嶄綅娆°€佹妸鎻¤緝楂樼殑鍘婚€夛紝鐩爣鏄妸婊戞。椋庨櫓鍘嬪埌鏈€浣庯紝涓嶆槸涓轰簡濂界湅锛岃€屾槸涓轰簡鐪熸鍏滃簳${lowScoreProfile ? "锛涗綆鍒嗘宸蹭紭鍏堟墿鍏呮洿瀹夊叏鐨勫彲鎶ラ€夐」锛屽厛纭繚鏈夊鍙笂銆?" : "銆?"}`,
+      explanation: `娣囨繂绨崇仦鍌氬涧閺€楣冨亝娴滄稑宸婚獮瀵稿殠閺勫孩妯夋担搴濈艾娴ｇ姴缍嬮崜宥勭秴濞喡扳偓浣瑰Ω閹宦ょ窛妤傛娈戦崢濠氣偓澶涚礉閻╊喗鐖ｉ弰顖涘Ω濠婃垶銆傛搴ㄦ珦閸樺鍩岄張鈧担搴礉娑撳秵妲告稉杞扮啊婵傜晫婀呴敍宀冣偓灞炬Ц娑撹桨绨￠惇鐔割劀閸忔粌绨?{lowScoreProfile ? "閿涙稐缍嗛崚鍡橆唽瀹歌弓绱崗鍫熷⒖閸忓懏娲跨€瑰鍙忛惃鍕讲閹躲儵鈧銆嶉敍灞藉帥绾喕绻氶張澶婎劅閸欘垯绗傞妴?" : "閵?"}`,
       schools: grouped.safe
     }
   ];
@@ -793,9 +852,9 @@ function pickTierSchoolsV2(recommendations, profile) {
     ? { rush: 3, steady: 4, safe: 6 }
     : { rush: 3, steady: 4, safe: 5 };
   const used = new Set();
-  const rushBucket = sortRushCandidates(recommendations.filter((item) => item.tier === "鍐?"));
-  const steadyBucket = sortSteadyCandidates(recommendations.filter((item) => item.tier === "绋?"));
-  const safeBucket = sortSafeCandidates(recommendations.filter((item) => item.tier === "淇?"));
+  const rushBucket = sortRushCandidates(recommendations.filter((item) => item.tier === "閸?"));
+  const steadyBucket = sortSteadyCandidates(recommendations.filter((item) => item.tier === "缁?"));
+  const safeBucket = sortSafeCandidates(recommendations.filter((item) => item.tier === "娣?"));
 
   fillTierV2(grouped.rush, rushBucket, targets.rush, used);
   fillTierV2(grouped.steady, steadyBucket, targets.steady, used);
@@ -807,9 +866,9 @@ function pickTierSchoolsV2(recommendations, profile) {
         .filter((item) => !used.has(`${item.university}-${item.major}`))
         .filter((item) => item.rankGap >= 0 && item.confidence >= 88)
         .map((item) =>
-          item.tier === "淇?"
+          item.tier === "娣?"
             ? item
-            : withTierPlacement(item, "淇?", " 杩欎釜琚斁鍒颁繚搴曞眰锛屾槸涓轰簡琛ュ帤闃叉粦妗ｇ殑瀹夊叏鍨€?")
+            : withTierPlacement(item, "娣?", " 鏉╂瑤閲滅悮顐ｆ杹閸掗绻氭惔鏇炵湴閿涘本妲告稉杞扮啊鐞涖儱甯ら梼鍙夌拨濡楋絿娈戠€瑰鍙忛崹顐犫偓?")
         )
     );
     fillTierV2(grouped.safe, safeBackfill, targets.safe, used);
@@ -819,11 +878,11 @@ function pickTierSchoolsV2(recommendations, profile) {
     const steadyBackfill = sortSteadyCandidates(
       recommendations
         .filter((item) => !used.has(`${item.university}-${item.major}`))
-        .filter((item) => item.tier !== "鍐?" && item.rankGap >= -Math.round((item.bands?.steadyNegativeGap || 0) * 1.1))
+        .filter((item) => item.tier !== "閸?" && item.rankGap >= -Math.round((item.bands?.steadyNegativeGap || 0) * 1.1))
         .map((item) =>
-          item.tier === "绋?"
+          item.tier === "缁?"
             ? item
-            : withTierPlacement(item, "绋?", " 杩欎釜琚敤鏉ュ仛涓诲姏灞傝ˉ浣嶏紝椋庨櫓姣斿啿灞備綆锛屼絾姝ｅ紡濉姤鍓嶄粛瑕佸啀鏍稿涓€閬嶃€?")
+            : withTierPlacement(item, "缁?", " 鏉╂瑤閲滅悮顐ゆ暏閺夈儱浠涙稉璇插鐏炲倽藟娴ｅ稄绱濇搴ㄦ珦濮ｆ柨鍟跨仦鍌欑秵閿涘奔绲惧锝呯础婵夘偅濮ら崜宥勭矝鐟曚礁鍟€閺嶇顕稉鈧柆宥冣偓?")
         )
     );
     fillTierV2(grouped.steady, steadyBackfill, targets.steady, used);
@@ -835,9 +894,9 @@ function pickTierSchoolsV2(recommendations, profile) {
         .filter((item) => !used.has(`${item.university}-${item.major}`))
         .filter((item) => item.rankGap < 0)
         .map((item) =>
-          item.tier === "鍐?"
+          item.tier === "閸?"
             ? item
-            : withTierPlacement(item, "鍐?", " 杩欎釜灞炰簬鍐插埡琛ュ厖浣嶏紝闇€瑕佹壙鎷呬竴瀹氱殑褰曞彇椋庨櫓銆?")
+            : withTierPlacement(item, "閸?", " 鏉╂瑤閲滅仦鐐扮艾閸愭彃鍩＄悰銉ュ帠娴ｅ稄绱濋棁鈧憰浣瑰閹峰懍绔寸€规氨娈戣ぐ鏇炲絿妞嬪酣娅撻妴?")
         )
     );
     fillTierV2(grouped.rush, rushBackfill, targets.rush, used);
@@ -872,7 +931,7 @@ function buildApplicationPlan(recommendations, profile, generatedData) {
     profile.score
   );
   const latestRankText = latestScoreRank?.rank
-    ? `结合 ${latestScoreRank.year} 年 ${profile.province}${profile.track}类位次表，当前分数对应位次约 ${latestScoreRank.rank}。`
+    ? `结合 ${latestScoreRank.year} 年 ${profile.province}${profile.track} 位次表，当前分数对应位次约 ${latestScoreRank.rank}。`
     : "当前位次主要依据你填写的信息和已导入院校线数据综合判断。";
   const lowScoreProfile = profile.rank > 120000;
 
@@ -900,7 +959,6 @@ function buildApplicationPlan(recommendations, profile, generatedData) {
     }
   ];
 }
-
 function pickTierSchools(recommendations, profile) {
   const grouped = {
     rush: [],
@@ -940,7 +998,6 @@ function pickTierSchools(recommendations, profile) {
 
   return grouped;
 }
-
 function fillTier(targetList, candidates, maxCount) {
   const seen = new Set(targetList.map((item) => `${item.university}-${item.major}`));
 
@@ -1007,7 +1064,6 @@ function buildProfileDiagnosis(profile, directions, recommendations, application
     ]
   };
 }
-
 function buildLocalSummary(profile, directions, recommendations, applicationPlan) {
   const topDirections = directions.slice(0, 3).map((item) => item.name).join("、");
   const risk = riskConfig[profile.risk];
@@ -1051,7 +1107,7 @@ function inferDirectionFromMajor(major, directions) {
     }
   }
 
-  return topDirections[0] || "综合本科";
+  return topDirections[0] || "缁煎悎鏈";
 }
 
 function matchStaticSchoolMeta(university) {
@@ -1129,7 +1185,7 @@ function requirementMentions(requirementText, keyword) {
 
 function matchesImportedSubjectRequirement(profile, subjectRequirement) {
   const requirementText = String(subjectRequirement || "").trim();
-  if (!requirementText || requirementText.includes("不限")) {
+  if (!requirementText || requirementText.includes("涓嶉檺")) {
     return true;
   }
 
@@ -1303,6 +1359,77 @@ function passesConstraints(profile, school, major) {
   return true;
 }
 
+function passesImportedConstraintsWithOptions(profile, row, schoolMeta, tuition, options = {}) {
+  if (!passesImportedConstraints(profile, row, schoolMeta, tuition)) {
+    if (!options.relaxPreferences) {
+      return false;
+    }
+
+    if (profile.maxTuition > 0 && tuition > profile.maxTuition) {
+      return false;
+    }
+
+    if (
+      !passesMajorSubjectEligibility(
+        profile,
+        row.major,
+        row.direction,
+        row.subjectRequirement,
+        row.subjectRule
+      )
+    ) {
+      return false;
+    }
+
+    if (
+      profile.subjectConstraints.includes("publicOnly") &&
+      schoolMeta &&
+      !schoolMeta.levelTags.includes("publicOnly")
+    ) {
+      return false;
+    }
+
+    return true;
+  }
+
+  return true;
+}
+
+function passesConstraintsWithOptions(profile, school, major, options = {}) {
+  if (!passesConstraints(profile, school, major)) {
+    if (!options.relaxPreferences) {
+      return false;
+    }
+
+    if (profile.maxTuition > 0 && school.tuition > profile.maxTuition) {
+      return false;
+    }
+
+    if (
+      !passesMajorSubjectEligibility(
+        profile,
+        major?.name,
+        major?.direction,
+        "",
+        major?.subjectRule || null
+      )
+    ) {
+      return false;
+    }
+
+    if (
+      profile.subjectConstraints.includes("publicOnly") &&
+      !school.levelTags.includes("publicOnly")
+    ) {
+      return false;
+    }
+
+    return true;
+  }
+
+  return true;
+}
+
 function resolveTier(ratio, config) {
   if (ratio <= config.safe) {
     return "保";
@@ -1337,22 +1464,22 @@ function resolveExtendedTier(ratio, config) {
 
 function buildReason(profile, school, major, threshold, tier, historical) {
   const parts = [
-    `${school.name}位于${school.city}，定位为${school.nature}。`,
+    `${school.name} 位于 ${school.city}，学校性质为 ${school.nature}。`,
     historical?.year
-      ? `已匹配到 ${historical.year} 年导入数据，该专业最低位次参考约为 ${threshold} 名。`
-      : `根据当前演示版位次模型估算，该专业目标位次约在 ${threshold} 名左右。`
+      ? `已匹配到 ${historical.year} 年数据，这个专业的参考最低位次约为 ${threshold}。`
+      : `按当前演示模型估算，这个专业的目标位次约为 ${threshold}。`
   ];
 
   if (profile.careerPlan) {
-    parts.push(`你的职业规划提到“${shorten(profile.careerPlan, 18)}”，与该方向具备一定匹配度。`);
+    parts.push(`你的职业规划提到“${shorten(profile.careerPlan, 18)}”，和这个方向有一定匹配。`);
   }
 
   if (tier === "冲") {
-    parts.push("适合放在冲刺层，用来争取更高平台。");
+    parts.push("更适合放在冲刺层，用来争取更高平台。");
   } else if (tier === "稳") {
-    parts.push("适合作为主力志愿，录取把握和匹配度更平衡。");
+    parts.push("更适合作为主力志愿，录取把握和匹配度更平衡。");
   } else {
-    parts.push("适合作为保底志愿，优先保证录取结果。");
+    parts.push("更适合作为保底志愿，优先保证录取结果。");
   }
 
   return parts.join("");
@@ -1360,11 +1487,11 @@ function buildReason(profile, school, major, threshold, tier, historical) {
 
 function buildImportedReason(profile, row, tier, schoolMeta) {
   const parts = [
-    `${row.university} 在 ${row.year} 年 ${profile.province}${profile.track}类 ${normalizeBatch(row.batch)} 中，${row.major} 的最低位次约为 ${row.minRank}。`
+    `${row.university} 在 ${row.year} 年 ${profile.province}${profile.track} 类 ${normalizeBatch(row.batch)} 中，${row.major} 的参考最低位次约为 ${row.minRank}。`
   ];
 
   if (row.admissionCount) {
-    parts.push(`该组计划数约 ${row.admissionCount}。`);
+    parts.push(`该专业组计划数约 ${row.admissionCount}。`);
   }
 
   if (row.subjectRequirement) {
@@ -1372,7 +1499,7 @@ function buildImportedReason(profile, row, tier, schoolMeta) {
   }
 
   if (profile.careerPlan) {
-    parts.push(`结合你提到的“${shorten(profile.careerPlan, 16)}”，这条线更适合拿来做 ${tier} 层判断。`);
+    parts.push(`结合你提到的“${shorten(profile.careerPlan, 16)}”，这条线更适合用来做${tier}层判断。`);
   }
 
   if (schoolMeta?.city) {
@@ -1380,7 +1507,7 @@ function buildImportedReason(profile, row, tier, schoolMeta) {
   }
 
   if (tier === "冲") {
-    parts.push("这类更像“够一够”的位置，可以冲，但别全部压在这里。");
+    parts.push("这类更像“够一够”的位置，可以冲，但不能全部压在这里。");
   } else if (tier === "稳") {
     parts.push("这类更适合做主力区，既有希望也更可控。");
   } else {
@@ -1390,6 +1517,22 @@ function buildImportedReason(profile, row, tier, schoolMeta) {
   return parts.join("");
 }
 
+function appendSoftPreferenceRelaxNote(reason, profile, softPreferenceRelaxed) {
+  if (!softPreferenceRelaxed) {
+    return reason;
+  }
+
+  const relaxTargets = [];
+  if (profile.preferredCities && !profile.subjectConstraints.includes("outOfProvinceOk")) {
+    relaxTargets.push("城市");
+  }
+  if (Array.isArray(profile.schoolTags) && profile.schoolTags.length) {
+    relaxTargets.push("院校层次");
+  }
+
+  const relaxText = relaxTargets.length ? relaxTargets.join("和") : "软偏好";
+  return `${reason} 为避免低分段或偏好过严时出现无校可报，这条结果已适度放宽${relaxText}做兜底筛选，但选科、学费和专业硬限制仍保持严格。`;
+}
 function buildConfidence(rank, threshold, tier) {
   const confidenceBase = tier === "保" ? 88 : tier === "稳" ? 78 : 64;
   const confidence =
@@ -1441,7 +1584,7 @@ function isRestrictedSpecialProgram(row, profile) {
     return profile.candidateType !== "special";
   }
 
-  if (text.includes("公费师范") || text.includes("优师计划") || text.includes("定向")) {
+  if (text.includes("鍏垂甯堣寖") || text.includes("浼樺笀璁″垝") || text.includes("瀹氬悜")) {
     return !profile.specialPlans.includes("teacherProgram");
   }
 
@@ -1556,16 +1699,48 @@ function createPlanRankMargin(rank, ratio, min, max) {
 function getPlanTierBands(profile) {
   const rank = Math.max(1, Number(profile.rank || 1));
   const lowScoreBand = rank >= 180000;
+  const sparseHistoryBand = profile.track === "历史" && rank >= 60000;
 
   return {
     lowScoreBand,
-    safePrimaryGap: createPlanRankMargin(rank, lowScoreBand ? 0.12 : 0.09, lowScoreBand ? 4200 : 2600, lowScoreBand ? 24000 : 32000),
-    safeFallbackGap: createPlanRankMargin(rank, lowScoreBand ? 0.065 : 0.055, 2200, lowScoreBand ? 15000 : 18000),
-    safeMaxGap: createPlanRankMargin(rank, 0.3, 5000, lowScoreBand ? 60000 : 40000),
-    steadyPositiveGap: createPlanRankMargin(rank, 0.012, 500, 4200),
-    steadyNegativeGap: createPlanRankMargin(rank, lowScoreBand ? 0.02 : 0.018, 800, lowScoreBand ? 7600 : 9000),
-    rushNegativeGap: createPlanRankMargin(rank, lowScoreBand ? 0.045 : 0.035, 1200, lowScoreBand ? 9500 : 8000),
-    rushMaxNegativeGap: createPlanRankMargin(rank, lowScoreBand ? 0.07 : 0.055, 1800, lowScoreBand ? 14500 : 12000)
+    sparseHistoryBand,
+    safePrimaryGap: createPlanRankMargin(
+      rank,
+      lowScoreBand ? 0.15 : sparseHistoryBand ? 0.1 : 0.09,
+      lowScoreBand ? 5200 : 3200,
+      lowScoreBand ? 32000 : 36000
+    ),
+    safeFallbackGap: createPlanRankMargin(
+      rank,
+      lowScoreBand ? 0.09 : sparseHistoryBand ? 0.06 : 0.055,
+      2600,
+      lowScoreBand ? 22000 : 20000
+    ),
+    safeMaxGap: createPlanRankMargin(rank, 0.3, 5000, lowScoreBand ? 60000 : 42000),
+    steadyPositiveGap: createPlanRankMargin(
+      rank,
+      lowScoreBand ? 0.03 : sparseHistoryBand ? 0.022 : 0.02,
+      1000,
+      lowScoreBand ? 9000 : 6500
+    ),
+    steadyNegativeGap: createPlanRankMargin(
+      rank,
+      lowScoreBand ? 0.05 : sparseHistoryBand ? 0.045 : 0.04,
+      1800,
+      lowScoreBand ? 14000 : 11000
+    ),
+    rushNegativeGap: createPlanRankMargin(
+      rank,
+      lowScoreBand ? 0.085 : sparseHistoryBand ? 0.075 : 0.065,
+      3200,
+      lowScoreBand ? 22000 : 15000
+    ),
+    rushMaxNegativeGap: createPlanRankMargin(
+      rank,
+      lowScoreBand ? 0.12 : sparseHistoryBand ? 0.11 : 0.095,
+      4800,
+      lowScoreBand ? 30000 : 22000
+    )
   };
 }
 
@@ -1582,14 +1757,23 @@ function resolvePlanTierMetrics(profile, threshold) {
     tier = PLAN_TIER_SAFE;
   } else if (rankGap >= -bands.steadyNegativeGap && rankGap <= bands.steadyPositiveGap) {
     tier = PLAN_TIER_STEADY;
-  } else if (rankGap < 0 && rankGap >= -bands.rushNegativeGap && rankGap >= -bands.rushMaxNegativeGap) {
+  } else if (rankGap < -bands.steadyNegativeGap && rankGap >= -bands.rushNegativeGap) {
     tier = PLAN_TIER_RUSH;
   } else if (rankGap >= bands.safeFallbackGap && rankGap <= bands.safeMaxGap) {
     tier = PLAN_TIER_SAFE;
     tierSource = "fallback";
   } else if (
-    rankGap >= -Math.round(bands.steadyNegativeGap * 1.18) &&
-    rankGap <= Math.round(bands.steadyPositiveGap * 1.2)
+    rankGap < -bands.rushNegativeGap &&
+    rankGap >= -bands.rushMaxNegativeGap
+  ) {
+    tier = PLAN_TIER_RUSH;
+    tierSource = "fallback";
+  } else if (
+    rankGap >= -Math.round(bands.steadyNegativeGap * 1.15) &&
+    rankGap <= Math.max(
+      Math.round(bands.steadyPositiveGap * 1.25),
+      Math.round(bands.safeFallbackGap * 0.6)
+    )
   ) {
     tier = PLAN_TIER_STEADY;
     tierSource = "fallback";
@@ -1631,37 +1815,60 @@ function normalizeRecommendationPoolForPlanV3(recommendations, profile) {
       const threshold = Number(item.threshold || 0);
       const tierMetrics = resolvePlanTierMetrics(profile, threshold);
       const tier = tierMetrics.tier || (tierMetrics.rankGap >= 0 ? PLAN_TIER_SAFE : PLAN_TIER_RUSH);
+      const confidence = buildPlanConfidence(profile, threshold, tier, tierMetrics);
+      const strictEligible =
+        (tier === PLAN_TIER_SAFE &&
+          tierMetrics.rankGap >= tierMetrics.bands.safePrimaryGap &&
+          tierMetrics.rankGap <= tierMetrics.bands.safeMaxGap) ||
+        (tier === PLAN_TIER_STEADY &&
+          tierMetrics.rankGap >= -tierMetrics.bands.steadyNegativeGap &&
+          tierMetrics.rankGap <= tierMetrics.bands.steadyPositiveGap) ||
+        (tier === PLAN_TIER_RUSH &&
+          tierMetrics.rankGap < -tierMetrics.bands.steadyNegativeGap &&
+          Math.abs(tierMetrics.rankGap) <= tierMetrics.bands.rushNegativeGap);
+      const rescueEligible =
+        tierMetrics.rankGap >= 0 &&
+        tierMetrics.rankGap <= tierMetrics.bands.safeMaxGap &&
+        (
+          tierMetrics.rankGap >= Math.round(tierMetrics.bands.safeFallbackGap * 0.72) ||
+          confidence >= 90
+        );
 
       return {
         ...item,
         tier,
         tierClass: getPlanTierClass(tier),
-        confidence: buildPlanConfidence(profile, threshold, tier, tierMetrics),
+        confidence,
         rankGap: tierMetrics.rankGap,
         gapRate: tierMetrics.gapRate,
         bands: tierMetrics.bands,
-        tierSource: tierMetrics.tierSource
+        tierSource: tierMetrics.tierSource,
+        strictEligible,
+        rescueEligible,
+        softPreferenceRelaxed: Boolean(item.softPreferenceRelaxed)
       };
     })
-    .filter((item) => {
-      if (!item?.bands) {
-        return false;
-      }
+    .filter((item) => item?.bands && Number.isFinite(item.rankGap));
+}
 
-      if (item.tier === PLAN_TIER_SAFE) {
-        return item.rankGap >= item.bands.safeFallbackGap && item.rankGap <= item.bands.safeMaxGap;
-      }
+function shouldBackfillRelaxedPreferenceItems(profile, strictCount, sourceCount) {
+  if (strictCount <= 0) {
+    return true;
+  }
 
-      if (item.tier === PLAN_TIER_STEADY) {
-        return item.rankGap >= -item.bands.steadyNegativeGap && item.rankGap <= item.bands.steadyPositiveGap;
-      }
+  if (profile.rank > 120000 && strictCount < 30) {
+    return true;
+  }
 
-      if (item.tier === PLAN_TIER_RUSH) {
-        return item.rankGap < 0 && Math.abs(item.rankGap) <= item.bands.rushMaxNegativeGap;
-      }
+  if (strictCount < 18) {
+    return true;
+  }
 
-      return false;
-    });
+  if (sourceCount > 0 && strictCount / sourceCount < 0.08) {
+    return true;
+  }
+
+  return false;
 }
 
 function sortPlanRushCandidates(items) {
@@ -1759,6 +1966,30 @@ function fillPlanTier(targetList, candidates, maxCount, used = new Set()) {
   }
 }
 
+function buildPlanRescueSafeCandidates(recommendations, used = new Set()) {
+  return sortPlanSafeCandidates(
+    recommendations
+      .filter((item) => !used.has(`${item.university}-${item.major}`))
+      .filter((item) => item.rescueEligible)
+      .filter((item) => item.rankGap >= 0)
+      .map((item) =>
+        item.tier === PLAN_TIER_SAFE
+          ? withPlanTierPlacement(
+              item,
+              PLAN_TIER_SAFE,
+              item.strictEligible
+                ? ""
+                : " 当前院校位次明显在考生之后，系统将其补入保底层，用来加厚兜底安全垫。"
+            )
+          : withPlanTierPlacement(
+              item,
+              PLAN_TIER_SAFE,
+              " 当前院校虽然原始层级更接近稳妥区，但因为对你更安全，所以被下调到保底层。"
+            )
+      )
+  );
+}
+
 function pickTierSchoolsV3(recommendations, profile) {
   const grouped = {
     rush: [],
@@ -1776,6 +2007,7 @@ function pickTierSchoolsV3(recommendations, profile) {
       recommendations.filter(
         (item) =>
           item.tier === PLAN_TIER_RUSH &&
+          item.strictEligible &&
           item.rankGap < 0 &&
           Math.abs(item.rankGap) <= (item.bands?.rushMaxNegativeGap || 0)
       )
@@ -1789,6 +2021,7 @@ function pickTierSchoolsV3(recommendations, profile) {
       recommendations.filter(
         (item) =>
           item.tier === PLAN_TIER_STEADY &&
+          item.strictEligible &&
           item.rankGap >= -(item.bands?.steadyNegativeGap || 0) &&
           item.rankGap <= (item.bands?.steadyPositiveGap || 0)
       )
@@ -1802,6 +2035,7 @@ function pickTierSchoolsV3(recommendations, profile) {
       recommendations.filter(
         (item) =>
           item.tier === PLAN_TIER_SAFE &&
+          item.strictEligible &&
           item.rankGap >= (item.bands?.safeFallbackGap || 0) &&
           item.rankGap <= (item.bands?.safeMaxGap || 0)
       )
@@ -1818,6 +2052,7 @@ function pickTierSchoolsV3(recommendations, profile) {
           .filter((item) => !used.has(`${item.university}-${item.major}`))
           .filter(
             (item) =>
+              item.strictEligible &&
               item.rankGap >= (item.bands?.safeFallbackGap || 0) &&
               item.rankGap <= (item.bands?.safeMaxGap || 0) &&
               item.confidence >= 88
@@ -1825,7 +2060,11 @@ function pickTierSchoolsV3(recommendations, profile) {
           .map((item) =>
             item.tier === PLAN_TIER_SAFE
               ? item
-              : withPlanTierPlacement(item, PLAN_TIER_SAFE, " 这条被上调到保底层，用来补强防滑档的安全垫。")
+              : withPlanTierPlacement(
+                  item,
+                  PLAN_TIER_SAFE,
+                  " 当前候选与考生位次拉开了足够安全距离，被补入保底层。"
+                )
           )
       ),
       targets.safe,
@@ -1841,6 +2080,7 @@ function pickTierSchoolsV3(recommendations, profile) {
           .filter((item) => !used.has(`${item.university}-${item.major}`))
           .filter(
             (item) =>
+              item.rescueEligible &&
               item.rankGap >= (item.bands?.safePrimaryGap || 0) &&
               item.rankGap <= (item.bands?.safeMaxGap || 0) &&
               item.confidence >= 92
@@ -1849,10 +2089,19 @@ function pickTierSchoolsV3(recommendations, profile) {
             withPlanTierPlacement(
               item,
               PLAN_TIER_SAFE,
-              " 这条作为高把握保底补位，优先用于压低滑档和调剂失控风险。"
+              " 当前候选在真实数据里更接近安全边界，用来补足不滑档的兜底层。"
             )
           )
       ),
+      targets.safe,
+      used
+    );
+  }
+
+  if (grouped.safe.length < targets.safe) {
+    fillPlanTier(
+      grouped.safe,
+      buildPlanRescueSafeCandidates(recommendations, used),
       targets.safe,
       used
     );
@@ -1866,14 +2115,21 @@ function pickTierSchoolsV3(recommendations, profile) {
           .filter((item) => !used.has(`${item.university}-${item.major}`))
           .filter(
             (item) =>
-              item.tier !== PLAN_TIER_RUSH &&
-              item.rankGap >= -(item.bands?.steadyNegativeGap || 0) &&
-              item.rankGap <= (item.bands?.steadyPositiveGap || 0)
+              item.rankGap >= -Math.round((item.bands?.steadyNegativeGap || 0) * 1.2) &&
+              item.rankGap <= Math.max(
+                Math.round((item.bands?.steadyPositiveGap || 0) * 1.25),
+                Math.round((item.bands?.safeFallbackGap || 0) * 0.55)
+              ) &&
+              item.rankGap < (item.bands?.safePrimaryGap || Number.MAX_SAFE_INTEGER)
           )
           .map((item) =>
             item.tier === PLAN_TIER_STEADY
               ? item
-              : withPlanTierPlacement(item, PLAN_TIER_STEADY, " 这条作为主力层补位，风险低于冲层，但正式填报前仍建议再核一遍。")
+              : withPlanTierPlacement(
+                  item,
+                  PLAN_TIER_STEADY,
+                  " 当前候选和你的位次足够接近，被补入稳妥层承担主力志愿功能。"
+                )
           )
       ),
       targets.steady,
@@ -1889,13 +2145,20 @@ function pickTierSchoolsV3(recommendations, profile) {
           .filter((item) => !used.has(`${item.university}-${item.major}`))
           .filter(
             (item) =>
-              item.rankGap < 0 &&
-              Math.abs(item.rankGap) <= (item.bands?.rushMaxNegativeGap || 0)
+              item.rankGap < -Math.max(
+                Math.round((item.bands?.steadyNegativeGap || 0) * 0.72),
+                1000
+              ) &&
+              Math.abs(item.rankGap) <= Math.round((item.bands?.rushMaxNegativeGap || 0) * 1.05)
           )
           .map((item) =>
             item.tier === PLAN_TIER_RUSH
               ? item
-              : withPlanTierPlacement(item, PLAN_TIER_RUSH, " 这条作为冲刺补位，属于需要承担一定录取风险的选项。")
+              : withPlanTierPlacement(
+                  item,
+                  PLAN_TIER_RUSH,
+                  " 当前候选录取线略高于你的位次，但仍在可尝试争取的范围内，所以放入冲刺层。"
+                )
           )
       ),
       targets.rush,
@@ -1915,7 +2178,7 @@ function buildApplicationPlanV3(recommendations, profile, generatedData) {
     profile.score
   );
   const latestRankText = latestScoreRank?.rank
-    ? `结合 ${latestScoreRank.year} 年 ${profile.province}${profile.track} 位次参考，当前分数对应位次约 ${latestScoreRank.rank}。`
+    ? `结合 ${latestScoreRank.year} 年 ${profile.province}${profile.track} 位次表，当前分数对应位次约 ${latestScoreRank.rank}。`
     : "当前位次主要依据你填写的信息和已导入院校线数据综合判断。";
   const lowScoreProfile = profile.rank > 120000;
 
@@ -1924,21 +2187,21 @@ function buildApplicationPlanV3(recommendations, profile, generatedData) {
       tier: PLAN_TIER_RUSH,
       tierLabel: PLAN_TIER_LABELS[PLAN_TIER_RUSH],
       tierClass: "rush",
-      explanation: `${latestRankText}冲刺层只放那些历年线比你当前位次更高、相对录取概率更低的去向，功能是“往上冲”，不是全部压在这里${lowScoreProfile ? "；低分段要先保本科，再谈平台。" : "。"}${enrichTierExplanation(PLAN_TIER_RUSH, grouped.rush[0])}`,
+      explanation: `${latestRankText} 冲刺层只放录取线高于你当前位次、但仍在可争取范围内的学校${lowScoreProfile ? "；分数靠近本科线时，冲刺层会更克制，先保本科不滑档。" : "。"}${enrichTierExplanation(PLAN_TIER_RUSH, grouped.rush[0])}`,
       schools: grouped.rush
     },
     {
       tier: PLAN_TIER_STEADY,
       tierLabel: PLAN_TIER_LABELS[PLAN_TIER_STEADY],
       tierClass: "steady",
-      explanation: `主力层是整份表的核心，主要放历年线与你相对细匹配的学校和专业组，也就是“能报、能读、能接受”的主力区。${enrichTierExplanation(PLAN_TIER_STEADY, grouped.steady[0])}`,
+      explanation: `稳妥层优先放和你当前位次最接近、录取把握和专业接受度都更均衡的学校，它们承担的是整张表里的主力功能。${enrichTierExplanation(PLAN_TIER_STEADY, grouped.steady[0])}`,
       schools: grouped.steady
     },
     {
       tier: PLAN_TIER_SAFE,
       tierLabel: PLAN_TIER_LABELS[PLAN_TIER_SAFE],
       tierClass: "safe",
-      explanation: `保底层只放那些历年线明显低于你当前位次、把握较高的去向，目标是把滑档风险压到最低，不是为了好看，而是为了真正兜底${lowScoreProfile ? "；低分段已优先扩充更安全的可报选项，先确保有学可上。" : "。"}${enrichTierExplanation(PLAN_TIER_SAFE, grouped.safe[0])}`,
+      explanation: `保底层必须明显更安全，目标不是好看，而是尽量不给滑档留口子${lowScoreProfile ? "；对本科线附近考生，系统会主动把保底层做厚，优先保证有学校可报。" : "。"}${enrichTierExplanation(PLAN_TIER_SAFE, grouped.safe[0])}`,
       schools: grouped.safe
     }
   ];
