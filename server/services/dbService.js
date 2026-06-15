@@ -23,7 +23,8 @@ db.exec(`
     username TEXT NOT NULL UNIQUE,
     role TEXT NOT NULL DEFAULT 'advisor',
     password_hash TEXT NOT NULL,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    last_login_at TEXT
   );
 
   CREATE TABLE IF NOT EXISTS auth_tokens (
@@ -48,6 +49,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS chat_history (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
+    session_id TEXT,
     provider TEXT,
     messages_json TEXT NOT NULL,
     reply_text TEXT NOT NULL,
@@ -74,6 +76,8 @@ db.exec(`
 `);
 
 ensureUsersRoleColumn();
+ensureChatSessionColumn();
+ensureUsersLastLoginColumn();
 ensureDefaultAdmin();
 
 export function getUsageStatsForIdentity({ userId, trialToken }) {
@@ -116,7 +120,7 @@ export function registerTrialUsage({ trialToken, actionType }) {
 export function authenticateUser(username, password) {
   const user = db
     .prepare(`
-      SELECT id, username, role, password_hash, created_at
+      SELECT id, username, role, password_hash, created_at, last_login_at
       FROM users
       WHERE username = ?
     `)
@@ -126,13 +130,18 @@ export function authenticateUser(username, password) {
     return null;
   }
 
+  const lastLoginAt = new Date().toISOString();
   const token = crypto.randomUUID();
+  db.prepare("UPDATE users SET last_login_at = ? WHERE id = ?").run(lastLoginAt, user.id);
   db.prepare("INSERT INTO auth_tokens (token, user_id, created_at) VALUES (?, ?, ?)")
     .run(token, user.id, new Date().toISOString());
 
   return {
     token,
-    user: normalizeUser(user)
+    user: normalizeUser({
+      ...user,
+      last_login_at: lastLoginAt
+    })
   };
 }
 
@@ -152,6 +161,7 @@ export function getUserFromToken(token) {
   const record = db
     .prepare(`
       SELECT users.id, users.username, users.role, users.created_at
+        , users.last_login_at
       FROM auth_tokens
       JOIN users ON users.id = auth_tokens.user_id
       WHERE auth_tokens.token = ?
@@ -165,6 +175,7 @@ export function listUsers() {
   return db
     .prepare(`
       SELECT id, username, role, created_at
+        , last_login_at
       FROM users
       ORDER BY
         CASE WHEN role = 'admin' THEN 0 ELSE 1 END,
@@ -257,15 +268,83 @@ export function savePlanHistory({ userId, profile, result }) {
 
 export function saveChatHistory({ userId, provider, messages, replyText }) {
   db.prepare(`
-    INSERT INTO chat_history (user_id, provider, messages_json, reply_text, created_at)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO chat_history (user_id, session_id, provider, messages_json, reply_text, created_at)
+    VALUES (?, ?, ?, ?, ?, ?)
   `).run(
     userId || null,
+    null,
     provider,
     JSON.stringify(messages),
     replyText,
     new Date().toISOString()
   );
+}
+
+export function saveChatSessionHistory({ userId, sessionId, provider, messages, replyText }) {
+  db.prepare(`
+    INSERT INTO chat_history (user_id, session_id, provider, messages_json, reply_text, created_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(
+    userId || null,
+    sessionId || null,
+    provider,
+    JSON.stringify(messages),
+    replyText,
+    new Date().toISOString()
+  );
+}
+
+export function getLatestChatSession({ userId, sessionId, isAdmin = false }) {
+  if (!sessionId) {
+    return null;
+  }
+
+  let row;
+
+  if (isAdmin) {
+    row = db
+      .prepare(`
+        SELECT id, session_id, provider, messages_json, reply_text, created_at
+        FROM chat_history
+        WHERE session_id = ?
+        ORDER BY id DESC
+        LIMIT 1
+      `)
+      .get(sessionId);
+  } else if (userId) {
+    row = db
+      .prepare(`
+        SELECT id, session_id, provider, messages_json, reply_text, created_at
+        FROM chat_history
+        WHERE session_id = ? AND user_id = ?
+        ORDER BY id DESC
+        LIMIT 1
+      `)
+      .get(sessionId, userId);
+  } else {
+    row = db
+      .prepare(`
+        SELECT id, session_id, provider, messages_json, reply_text, created_at
+        FROM chat_history
+        WHERE session_id = ? AND user_id IS NULL
+        ORDER BY id DESC
+        LIMIT 1
+      `)
+      .get(sessionId);
+  }
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    sessionId: row.session_id,
+    provider: row.provider,
+    messages: JSON.parse(row.messages_json),
+    replyText: row.reply_text,
+    createdAt: row.created_at
+  };
 }
 
 export function saveImportHistory({ userId, datasetType, fileName, rowCount }) {
@@ -297,9 +376,10 @@ export function getPlanHistory({ limit = 20, userId, isAdmin = false } = {}) {
 export function getChatHistory({ limit = 20, userId, isAdmin = false } = {}) {
   return runHistoryQuery({
     table: "chat_history",
-    columns: "id, provider, messages_json, reply_text, created_at",
+    columns: "id, session_id, provider, messages_json, reply_text, created_at",
     mapper: (item) => ({
       id: item.id,
+      sessionId: item.session_id,
       provider: item.provider,
       messages: JSON.parse(item.messages_json),
       replyText: item.reply_text,
@@ -353,6 +433,15 @@ function ensureUsersRoleColumn() {
   db.prepare("UPDATE users SET role = 'advisor' WHERE role IS NULL OR role = ''").run();
 }
 
+function ensureUsersLastLoginColumn() {
+  const columns = db.prepare("PRAGMA table_info(users)").all();
+  const hasLastLoginColumn = columns.some((column) => column.name === "last_login_at");
+
+  if (!hasLastLoginColumn) {
+    db.exec("ALTER TABLE users ADD COLUMN last_login_at TEXT");
+  }
+}
+
 function ensureDefaultAdmin() {
   const username = getBootstrapAdminUsername();
   const password = process.env.ADMIN_PASSWORD;
@@ -387,9 +476,18 @@ function ensureDefaultAdmin() {
   }
 }
 
+function ensureChatSessionColumn() {
+  const columns = db.prepare("PRAGMA table_info(chat_history)").all();
+  const hasSessionIdColumn = columns.some((column) => column.name === "session_id");
+
+  if (!hasSessionIdColumn) {
+    db.exec("ALTER TABLE chat_history ADD COLUMN session_id TEXT");
+  }
+}
+
 function getUserById(userId) {
   const user = db
-    .prepare("SELECT id, username, role, created_at FROM users WHERE id = ?")
+    .prepare("SELECT id, username, role, created_at, last_login_at FROM users WHERE id = ?")
     .get(userId);
 
   return user ? normalizeUser(user) : null;
@@ -397,7 +495,7 @@ function getUserById(userId) {
 
 function getUserByUsername(username) {
   const user = db
-    .prepare("SELECT id, username, role, created_at FROM users WHERE username = ?")
+    .prepare("SELECT id, username, role, created_at, last_login_at FROM users WHERE username = ?")
     .get(username);
 
   return user ? normalizeUser(user) : null;
@@ -412,7 +510,8 @@ function normalizeUser(user) {
     id: user.id,
     username: user.username,
     role: user.role || "advisor",
-    createdAt: user.created_at
+    createdAt: user.created_at,
+    lastLoginAt: user.last_login_at || null
   };
 }
 

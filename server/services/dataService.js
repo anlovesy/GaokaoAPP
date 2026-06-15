@@ -43,6 +43,59 @@ export function getDataStatus() {
   };
 }
 
+export function getLatestProvinceYear(data, province, track) {
+  const candidates = data.provinceScoreRank
+    .filter(
+      (item) =>
+        item.province === province &&
+        (!track || !item.track || item.track === track)
+    )
+    .map((item) => Number(item.year))
+    .filter(Boolean);
+
+  return candidates.length ? Math.max(...candidates) : null;
+}
+
+export function getLatestUniversityYear(data, province, track) {
+  const candidates = data.universityMajorLines
+    .filter(
+      (item) =>
+        item.province === province &&
+        (!track || !item.track || item.track === track)
+    )
+    .map((item) => Number(item.year))
+    .filter(Boolean);
+
+  return candidates.length ? Math.max(...candidates) : null;
+}
+
+export function findNearbyScoreRank(data, province, track, score) {
+  const latestYear = getLatestProvinceYear(data, province, track);
+  if (!latestYear) {
+    return null;
+  }
+
+  const scopedRows = data.provinceScoreRank.filter(
+    (item) =>
+      item.province === province &&
+      item.year === latestYear &&
+      (!track || !item.track || item.track === track)
+  );
+
+  if (!scopedRows.length) {
+    return null;
+  }
+
+  const exact = scopedRows.find((item) => Number(item.score) === Number(score));
+  if (exact) {
+    return exact;
+  }
+
+  return scopedRows
+    .slice()
+    .sort((a, b) => Math.abs(Number(a.score) - Number(score)) - Math.abs(Number(b.score) - Number(score)))[0] || null;
+}
+
 export function findHistoricalMajorLine(data, province, track, university, major) {
   const scopedMatches = data.universityMajorLines
     .filter(

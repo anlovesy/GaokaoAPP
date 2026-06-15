@@ -17,6 +17,55 @@ const generatedDir = process.env.DATA_DIR
 const provinceScoreRankOutput = path.join(generatedDir, "provinceScoreRank.json");
 const universityMajorLinesOutput = path.join(generatedDir, "universityMajorLines.json");
 
+function splitSubjectField(value) {
+  return String(value || "")
+    .split(/[|,，/、\s]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeSubjectRule(row) {
+  const raw = String(row.subject_requirement || "").trim();
+  const requiredSubjects = splitSubjectField(row.required_subjects);
+  const oneOfSubjects = splitSubjectField(row.one_of_subjects);
+  const preferredSubjects = splitSubjectField(row.preferred_subjects);
+  const forbiddenSubjects = splitSubjectField(row.forbidden_subjects);
+  const allowedTracks = splitSubjectField(row.allowed_tracks || row.track || row.subject_track);
+  const explicitRuleType = String(row.subject_requirement_type || "").trim();
+
+  if (!requiredSubjects.length && (raw === "物理" || raw === "历史")) {
+    requiredSubjects.push(raw);
+  }
+
+  if (!allowedTracks.length && (raw === "物理" || raw === "历史")) {
+    allowedTracks.push(raw);
+  }
+
+  const ruleType =
+    explicitRuleType ||
+    (requiredSubjects.length
+      ? "allOf"
+      : oneOfSubjects.length
+        ? "oneOf"
+        : forbiddenSubjects.length
+          ? "forbidden"
+          : raw.includes("不限")
+            ? "none"
+            : raw
+              ? "derived"
+              : "unknown");
+
+  return {
+    raw,
+    ruleType,
+    requiredSubjects,
+    oneOfSubjects,
+    preferredSubjects,
+    forbiddenSubjects,
+    allowedTracks
+  };
+}
+
 export function ensureDataDirectories() {
   fs.mkdirSync(importDir, { recursive: true });
   fs.mkdirSync(generatedDir, { recursive: true });
@@ -55,6 +104,11 @@ export function importAllCsvFiles() {
           batch: row.batch,
           admissionCount: Number(row.admission_count || 0),
           subjectRequirement: row.subject_requirement,
+          subjectRule: normalizeSubjectRule(row),
+          requiredSubjects: splitSubjectField(row.required_subjects),
+          oneOfSubjects: splitSubjectField(row.one_of_subjects),
+          preferredSubjects: splitSubjectField(row.preferred_subjects),
+          forbiddenSubjects: splitSubjectField(row.forbidden_subjects),
           tuition: Number(row.tuition || 0),
           notes: row.notes || ""
         });

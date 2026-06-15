@@ -13,14 +13,16 @@ import {
   createUser,
   deleteUser,
   getChatHistory,
+  getLatestChatSession,
   getImportHistory,
   getPlanHistory,
-  getUserFromToken,
   getUsageStatsForIdentity,
+  getUserFromToken,
   listUsers,
   registerTrialUsage,
   revokeToken,
   saveChatHistory,
+  saveChatSessionHistory,
   saveImportHistory,
   savePlanHistory,
   updateUserPassword,
@@ -30,6 +32,7 @@ import { importAllCsvFiles, saveImportFile } from "./services/importService.js";
 
 const app = express();
 const port = Number(process.env.PORT || 3001);
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "..");
@@ -41,7 +44,9 @@ app.use(express.json({ limit: "1mb" }));
 
 const requestSchema = z.object({
   province: z.string().min(1),
+  examMode: z.string().min(1).default("3+1+2"),
   track: z.enum(["历史", "物理"]).default("物理"),
+  selectedSubjects: z.array(z.string()).default([]),
   score: z.number().min(0).max(750),
   rank: z.number().int().min(1),
   risk: z.enum(["aggressive", "balanced", "conservative"]),
@@ -49,7 +54,13 @@ const requestSchema = z.object({
   careerPlan: z.string().optional().default(""),
   notes: z.string().optional().default(""),
   maxTuition: z.number().min(0).optional().default(0),
+  englishScore: z.number().min(0).max(150).optional().default(0),
+  candidateType: z.string().optional().default("general"),
+  specialPlans: z.array(z.string()).default([]),
+  healthNotes: z.string().optional().default(""),
+  willingAdjustment: z.boolean().optional().default(true),
   interests: z.array(z.string()).default([]),
+  personalityTags: z.array(z.string()).default([]),
   schoolTags: z.array(z.string()).default([]),
   majorNeeds: z.array(z.string()).default([]),
   subjectConstraints: z.array(z.string()).default([])
@@ -62,6 +73,8 @@ const loginSchema = z.object({
 
 const chatSchema = z.object({
   provider: z.string().optional().default("auto"),
+  advisorMode: z.enum(["xuefeng", "gentle"]).optional().default("xuefeng"),
+  sessionId: z.string().optional().nullable(),
   planningContext: z.any().optional().nullable(),
   messages: z
     .array(
@@ -143,9 +156,7 @@ app.get("/api/auth/me", (request, response) => {
 
 app.post("/api/auth/logout", (request, response) => {
   revokeToken(resolveToken(request));
-  response.json({
-    ok: true
-  });
+  response.json({ ok: true });
 });
 
 app.get("/api/meta/providers", (_request, response) => {
@@ -322,10 +333,7 @@ app.delete("/api/admin/users/:id", (request, response) => {
     }
 
     deleteUser(targetUserId);
-
-    response.json({
-      ok: true
-    });
+    response.json({ ok: true });
   } catch (error) {
     response.status(400).json({
       ok: false,
@@ -336,7 +344,7 @@ app.delete("/api/admin/users/:id", (request, response) => {
 
 app.post("/api/planner/recommend", async (request, response) => {
   try {
-    const access = resolveUsageAccess(request);
+    const access = resolveUsageAccess(request, "planner");
     if (!access.allowed) {
       response.status(403).json({
         ok: false,
@@ -376,7 +384,7 @@ app.post("/api/planner/recommend", async (request, response) => {
 
 app.post("/api/chat/advisor", async (request, response) => {
   try {
-    const access = resolveUsageAccess(request);
+    const access = resolveUsageAccess(request, "chat");
     if (!access.allowed) {
       response.status(403).json({
         ok: false,
@@ -386,20 +394,39 @@ app.post("/api/chat/advisor", async (request, response) => {
     }
 
     const payload = chatSchema.parse(request.body);
-    const reply = await generateAdvisorReply(payload);
     const user = getUserFromRequest(request);
-
-    saveChatHistory({
+    const latestSession = getLatestChatSession({
       userId: user?.id,
-      provider: payload.provider,
-      messages: payload.messages,
-      replyText: reply.reply
+      sessionId: payload.sessionId,
+      isAdmin: isAdmin(user)
     });
 
-    if (!user && access.trialToken) {
-      registerTrialUsage({
-        trialToken: access.trialToken,
-        actionType: "chat"
+    const mergedMessages = mergeChatMessages(latestSession?.messages, payload.messages);
+    const reply = await generateAdvisorReply({
+      ...payload,
+      preferredProvider: payload.provider,
+      messages: mergedMessages
+    });
+
+    const persistedMessages = trimMessagesForStorage([
+      ...mergedMessages,
+      { role: "assistant", content: reply.reply }
+    ]);
+
+    if (payload.sessionId) {
+      saveChatSessionHistory({
+        userId: user?.id,
+        sessionId: payload.sessionId,
+        provider: payload.provider,
+        messages: persistedMessages,
+        replyText: reply.reply
+      });
+    } else {
+      saveChatHistory({
+        userId: user?.id,
+        provider: payload.provider,
+        messages: persistedMessages,
+        replyText: reply.reply
       });
     }
 
@@ -467,9 +494,9 @@ if (fs.existsSync(distDir)) {
   });
 } else {
   app.get("/", (_request, response) => {
-    response.status(200).send(
-      "前端尚未构建。请先运行 `npm run build`，然后访问 http://localhost:3001 。"
-    );
+    response
+      .status(200)
+      .send("前端尚未构建。请先运行 `npm run build`，然后访问 http://localhost:3001。");
   });
 }
 
@@ -495,7 +522,7 @@ function resolveToken(request) {
   return header.startsWith("Bearer ") ? header.slice(7) : "";
 }
 
-function resolveUsageAccess(request) {
+function resolveUsageAccess(request, actionType = "planner") {
   const user = getUserFromRequest(request);
   if (user) {
     return {
@@ -505,11 +532,20 @@ function resolveUsageAccess(request) {
   }
 
   const trialToken = getTrialToken(request);
+
+  if (actionType === "chat") {
+    return {
+      allowed: false,
+      trialToken,
+      message: "游客模式只开放一次正式志愿表体验。连续 AI 顾问、上下文记忆和历史记录需要登录后使用。"
+    };
+  }
+
   if (!trialToken) {
     return {
       allowed: false,
       trialToken: "",
-      message: "未登录用户需要先领取一次试用标识后才能体验。请刷新页面后重试。"
+      message: "未登录用户需要先领取一次游客试用标识后才能体验。请刷新页面后重试。"
     };
   }
 
@@ -518,7 +554,7 @@ function resolveUsageAccess(request) {
     return {
       allowed: false,
       trialToken,
-      message: "游客账号仅可体验一次正式志愿或顾问功能。请联系管理员创建账号后继续无限使用。"
+      message: "游客模式仅可完成一次正式志愿表体验。请登录账号后继续无限使用。"
     };
   }
 
@@ -567,4 +603,59 @@ function requireAdminUser(request, response) {
   }
 
   return user;
+}
+
+function mergeChatMessages(historyMessages = [], incomingMessages = []) {
+  const normalizedHistory = normalizeMessages(historyMessages);
+  const normalizedIncoming = normalizeMessages(incomingMessages);
+
+  if (!normalizedHistory.length) {
+    return trimMessagesForStorage(normalizedIncoming, 18);
+  }
+
+  if (!normalizedIncoming.length) {
+    return trimMessagesForStorage(normalizedHistory, 18);
+  }
+
+  if (startsWithMessageTrail(normalizedIncoming, normalizedHistory)) {
+    return trimMessagesForStorage(normalizedIncoming, 18);
+  }
+
+  if (startsWithMessageTrail(normalizedHistory, normalizedIncoming)) {
+    return trimMessagesForStorage(normalizedHistory, 18);
+  }
+
+  const merged = [...normalizedHistory];
+  normalizedIncoming.forEach((message) => {
+    const last = merged[merged.length - 1];
+    if (last?.role === message.role && last?.content === message.content) {
+      return;
+    }
+
+    merged.push(message);
+  });
+
+  return trimMessagesForStorage(merged, 18);
+}
+
+function trimMessagesForStorage(messages, maxItems = 20) {
+  const normalized = normalizeMessages(messages);
+  return normalized.slice(-maxItems);
+}
+
+function normalizeMessages(messages) {
+  return Array.isArray(messages)
+    ? messages.filter((message) => message?.role && message?.content)
+    : [];
+}
+
+function startsWithMessageTrail(candidateMessages, prefixMessages) {
+  if (prefixMessages.length > candidateMessages.length) {
+    return false;
+  }
+
+  return prefixMessages.every((message, index) => {
+    const candidate = candidateMessages[index];
+    return candidate?.role === message?.role && candidate?.content === message?.content;
+  });
 }
