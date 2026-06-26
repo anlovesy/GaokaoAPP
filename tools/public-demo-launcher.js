@@ -18,6 +18,8 @@ const publicUrlFile = path.join(toolsDir, "public-demo-url.txt");
 const cloudflaredPath = path.join(toolsDir, "cloudflared.exe");
 const port = 3011;
 
+// HTTP/2 is more reliable than QUIC in locked-down networks where UDP is blocked.
+const tunnelProtocol = process.env.GAOKAO_TUNNEL_PROTOCOL || "http2";
 const command = process.argv[2];
 
 if (command === "start") {
@@ -28,7 +30,7 @@ if (command === "start") {
 } else if (command === "stop") {
   stop();
 } else {
-  console.error("用法: node tools/public-demo-launcher.js <start|stop>");
+  console.error("Usage: node tools/public-demo-launcher.js <start|stop>");
   process.exit(1);
 }
 
@@ -37,14 +39,15 @@ async function start() {
   const adminPassword = process.env.GAOKAO_DEMO_ADMIN_PASSWORD || "";
 
   if (adminPassword.trim().length < 8) {
-    throw new Error("后台密码至少需要 8 位。");
+    throw new Error("Admin password must be at least 8 characters.");
   }
 
   if (!fs.existsSync(cloudflaredPath)) {
-    throw new Error("缺少 tools/cloudflared.exe");
+    throw new Error("Missing tools/cloudflared.exe");
   }
 
   stopManagedProcess(tunnelPidPath);
+
   const listeningPid = getListeningPid(port);
   if (listeningPid) {
     writePid(serverPidPath, listeningPid);
@@ -54,6 +57,7 @@ async function start() {
   const serverLogPath = path.join(toolsDir, `project-server-public-${runId}.log`);
   const serverErrorLogPath = path.join(toolsDir, `project-server-public-${runId}.error.log`);
   const tunnelLogPath = path.join(toolsDir, `cloudflared-public-${runId}.log`);
+
   writeTextFile(activeServerLogPathFile, serverLogPath);
   writeTextFile(activeServerErrorLogPathFile, serverErrorLogPath);
   writeTextFile(activeTunnelLogPathFile, tunnelLogPath);
@@ -61,7 +65,7 @@ async function start() {
 
   let serverStartedByLauncher = false;
   if (!(await isHealthReady(`http://127.0.0.1:${port}/api/health`, 2000))) {
-    console.log("正在后台启动本地生产服务...");
+    console.log("Starting local production service in the background...");
     const serverStdout = fs.openSync(serverLogPath, "a");
     const serverStderr = fs.openSync(serverErrorLogPath, "a");
     const serverProcess = spawn(process.execPath, ["server/index.js"], {
@@ -80,7 +84,7 @@ async function start() {
     writePid(serverPidPath, serverProcess.pid);
     serverStartedByLauncher = true;
   } else {
-    console.log("检测到本地服务已经在运行，将直接复用 3011 端口。");
+    console.log(`Local service is already running on port ${port}.`);
   }
 
   const healthOk = await waitForHealth(`http://127.0.0.1:${port}/api/health`, 30000);
@@ -88,15 +92,23 @@ async function start() {
     if (serverStartedByLauncher) {
       stopManagedProcess(serverPidPath);
     }
-    throw new Error(`本地服务启动失败，请检查日志：${serverLogPath}`);
+    throw new Error(`Local service failed to start. Check: ${serverLogPath}`);
   }
 
-  console.log("正在后台启动 Cloudflare 临时公网隧道...");
+  console.log(`Starting Cloudflare quick tunnel with protocol ${tunnelProtocol}...`);
   const tunnelStdout = fs.openSync(tunnelLogPath, "a");
   const tunnelStderr = fs.openSync(tunnelLogPath, "a");
   const tunnelProcess = spawn(
     cloudflaredPath,
-    ["tunnel", "--url", `http://127.0.0.1:${port}`, "--logfile", tunnelLogPath],
+    [
+      "tunnel",
+      "--protocol",
+      tunnelProtocol,
+      "--url",
+      `http://127.0.0.1:${port}`,
+      "--logfile",
+      tunnelLogPath
+    ],
     {
       cwd: projectRoot,
       detached: true,
@@ -118,32 +130,34 @@ async function start() {
   }
 
   console.log("");
-  console.log("公网演示已启动。");
-  console.log(`后台管理员账号：${adminUsername}`);
-  console.log(`后台管理员密码：${adminPassword}`);
+  console.log("Public demo is running.");
+  console.log(`Admin username: ${adminUsername}`);
+  console.log(`Admin password: ${adminPassword}`);
+
   if (publicUrl) {
-    console.log(`公网演示链接：${publicUrl}`);
+    console.log(`Public demo URL: ${publicUrl}`);
+    console.log(`Saved URL file: ${publicUrlFile}`);
   } else {
-    console.log("公网隧道未成功建立。当前本地服务已启动，可先在本机访问：");
-    console.log(`本地地址：http://127.0.0.1:${port}`);
-    console.log(`隧道日志：${tunnelLogPath}`);
+    console.log("Quick tunnel was not established successfully.");
+    console.log(`Local URL: http://127.0.0.1:${port}`);
+    console.log(`Tunnel log: ${tunnelLogPath}`);
   }
-  if (publicUrl) {
-    console.log(`当前链接记录文件：${publicUrlFile}`);
-  }
-  console.log(`关闭演示请双击：${path.join(projectRoot, "stop-public-demo.cmd")}`);
+
+  console.log(`Stop script: ${path.join(projectRoot, "stop-public-demo.cmd")}`);
 }
 
 function stop() {
   stopManagedProcess(tunnelPidPath);
+
   const listeningPid = getListeningPid(port);
   if (listeningPid) {
     stopPid(listeningPid);
   }
+
   removeFileIfExists(tunnelPidPath);
   removeFileIfExists(serverPidPath);
   removeFileIfExists(publicUrlFile);
-  console.log("公网演示后台服务和隧道已停止。");
+  console.log("Public demo server and tunnel have been stopped.");
 }
 
 function stopManagedProcess(pidPath) {
@@ -177,8 +191,6 @@ function removeFileIfExists(filePath) {
     if (!(error && typeof error === "object" && "code" in error && error.code === "EBUSY")) {
       throw error;
     }
-
-    return;
   }
 }
 
@@ -199,6 +211,7 @@ function getListeningPid(targetPort) {
       encoding: "utf8",
       windowsHide: true
     });
+
     const lines = output.split(/\r?\n/);
     for (const line of lines) {
       if (!line.includes("LISTENING")) {
@@ -234,6 +247,7 @@ function writeTextFile(filePath, value) {
 function createRunId() {
   const now = new Date();
   const pad = (value) => String(value).padStart(2, "0");
+
   return [
     now.getFullYear(),
     pad(now.getMonth() + 1),
@@ -251,6 +265,7 @@ async function isHealthReady(url, timeoutMs) {
 
 function waitForHealth(url, timeoutMs) {
   const startedAt = Date.now();
+
   return new Promise((resolve) => {
     const attempt = () => {
       const request = http.get(url, (response) => {
@@ -285,6 +300,7 @@ function waitForHealth(url, timeoutMs) {
 
 function waitForTunnelUrl(logPath, timeoutMs) {
   const startedAt = Date.now();
+
   return new Promise((resolve) => {
     const attempt = () => {
       if (fs.existsSync(logPath)) {
