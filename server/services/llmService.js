@@ -44,10 +44,7 @@ export function listAvailableProviders() {
   };
 }
 
-export async function generateStructuredPlanningSummary({
-  preferredProvider = "auto",
-  input
-}) {
+export async function generateStructuredPlanningSummary({ preferredProvider = "auto", input }) {
   const providerId = resolveProviderId(preferredProvider);
   if (!providerId) {
     return null;
@@ -107,9 +104,13 @@ export async function generateAdvisorReply({
       messages,
       planningContext,
       advisorMode,
-      currentUserMessage: [...messages].reverse().find((message) => message.role === "user")?.content || "",
+      currentUserMessage:
+        [...messages].reverse().find((message) => message.role === "user")?.content || "",
       previousAssistantContent:
-        [...messages].slice(0, -1).reverse().find((message) => message.role === "assistant")?.content || ""
+        [...messages]
+          .slice(0, -1)
+          .reverse()
+          .find((message) => message.role === "assistant")?.content || ""
     });
 
     return {
@@ -119,8 +120,9 @@ export async function generateAdvisorReply({
     };
   }
 
-  const systemPrompt = advisorMode === "xuefeng"
-    ? `
+  const systemPrompt =
+    advisorMode === "xuefeng"
+      ? `
 你是一名中国高考志愿顾问，请始终使用中文回答。
 你现在采用“老师直说模式”：
 1. 说话像一个见过很多真实案例的高考老师，接地气、有人味，像老师也像朋友。
@@ -134,7 +136,7 @@ export async function generateAdvisorReply({
 9. 对普通家庭、广东考生、想稳就业的用户，要更强调确定性、平台、专业出口和试错成本。
 10. 回答里尽量加入“下一步该怎么做”，让用户知道立刻行动什么。
 `
-    : `
+      : `
 你是一名中国高考志愿顾问，请始终使用中文回答。
 
 要求：
@@ -197,7 +199,10 @@ ${JSON.stringify(recentMessages, null, 2)}`;
   return {
     provider: providerId,
     model: getProviderModel(providerId),
-    reply: safeReply || dynamicFollowUpReply || buildLocalChatReply(messages, planningContext, advisorMode)
+    reply:
+      safeReply ||
+      dynamicFollowUpReply ||
+      buildLocalChatReply(messages, planningContext, advisorMode)
   };
 }
 
@@ -245,12 +250,7 @@ function createClient(providerId) {
   });
 }
 
-async function invokeProvider({
-  providerId,
-  systemPrompt,
-  userPrompt,
-  jsonMode
-}) {
+async function invokeProvider({ providerId, systemPrompt, userPrompt, jsonMode }) {
   const client = createClient(providerId);
   if (!client) {
     return null;
@@ -308,7 +308,11 @@ function buildLocalChatReply(messages, planningContext, advisorMode = "xuefeng")
   const riskProfile = planningContext?.diagnosis?.riskProfile;
   const deepDiveChoice = resolveDeepDiveChoice(content);
   const followUpIntent = resolveFollowUpIntent(content, previousAssistantMessage?.content || "");
-  const profileLead = [planningContext?.profile?.track, planningContext?.profile?.score ? `${planningContext.profile.score} 分` : "", planningContext?.profile?.rank ? `位次约 ${planningContext.profile.rank}` : ""]
+  const profileLead = [
+    planningContext?.profile?.track,
+    planningContext?.profile?.score ? `${planningContext.profile.score} 分` : "",
+    planningContext?.profile?.rank ? `位次约 ${planningContext.profile.rank}` : ""
+  ]
     .filter(Boolean)
     .join("，");
 
@@ -324,8 +328,24 @@ function buildLocalChatReply(messages, planningContext, advisorMode = "xuefeng")
         : "";
 
       return isTeacherMode
-        ? [profileLead ? `先按你的情况说，${profileLead}。` : "", "第一件事我给你直接下判断：如果你已经想往 AI、软件、工程这类方向走，专业优先级就不能让得太狠，学校是锦上添花，不是拿来硬换赛道的。", steadyLead, rushLead, "真正危险的，不是学校层次低一点，而是为了学校名头把自己送进不想读的专业组。下一步你要是愿意，我可以直接把你这张表里“该保专业”的几所和“可以保学校”的几所给你点名分开。"].filter(Boolean).join("")
-        : [profileLead ? `结合你当前的情况，${profileLead}。` : "", "如果职业方向已经比较明确，通常要优先保证专业匹配；如果方向还不够明确、但平台差异很大，再考虑适度向学校倾斜。", steadyLead, rushLead, "如果你愿意，我下一轮可以继续把这张表拆成“专业优先组”和“学校优先组”，方便你直接排序。"].filter(Boolean).join("");
+        ? [
+            profileLead ? `先按你的情况说，${profileLead}。` : "",
+            "第一件事我给你直接下判断：如果你已经想往 AI、软件、工程这类方向走，专业优先级就不能让得太狠，学校是锦上添花，不是拿来硬换赛道的。",
+            steadyLead,
+            rushLead,
+            "真正危险的，不是学校层次低一点，而是为了学校名头把自己送进不想读的专业组。下一步你要是愿意，我可以直接把你这张表里“该保专业”的几所和“可以保学校”的几所给你点名分开。"
+          ]
+            .filter(Boolean)
+            .join("")
+        : [
+            profileLead ? `结合你当前的情况，${profileLead}。` : "",
+            "如果职业方向已经比较明确，通常要优先保证专业匹配；如果方向还不够明确、但平台差异很大，再考虑适度向学校倾斜。",
+            steadyLead,
+            rushLead,
+            "如果你愿意，我下一轮可以继续把这张表拆成“专业优先组”和“学校优先组”，方便你直接排序。"
+          ]
+            .filter(Boolean)
+            .join("");
     }
 
     if (resolvedIntent === "guangdongOnly") {
@@ -334,8 +354,22 @@ function buildLocalChatReply(messages, planningContext, advisorMode = "xuefeng")
         : "如果只留广东，首先要把保底层补厚，不然城市一锁死，整张表会变脆。";
 
       return isTeacherMode
-        ? [profileLead ? `我按你这套情况继续往下说，${profileLead}。` : "", "第二件事的核心不是能不能留广东，而是你愿意为留广东牺牲什么。普通家庭最常见的代价就三个：学校层次往下一档、专业热度往下一档、保底厚度必须加厚。", safeLead, "说白了，城市不是不能保，但你一旦只留广东，就别再同时要求学校平台、热门专业、录取把握度三样都占满。下一步你要不要我直接按“只留广东”给你重排一版思路？"].filter(Boolean).join("")
-        : [profileLead ? `结合你当前的情况，${profileLead}。` : "", "如果把范围收缩到广东，通常需要在学校层次、专业热度或保底厚度中至少让出一部分空间。", safeLead, "如果你愿意，我可以下一轮直接按“只留广东”的条件，帮你重排当前方案。"].filter(Boolean).join("");
+        ? [
+            profileLead ? `我按你这套情况继续往下说，${profileLead}。` : "",
+            "第二件事的核心不是能不能留广东，而是你愿意为留广东牺牲什么。普通家庭最常见的代价就三个：学校层次往下一档、专业热度往下一档、保底厚度必须加厚。",
+            safeLead,
+            "说白了，城市不是不能保，但你一旦只留广东，就别再同时要求学校平台、热门专业、录取把握度三样都占满。下一步你要不要我直接按“只留广东”给你重排一版思路？"
+          ]
+            .filter(Boolean)
+            .join("")
+        : [
+            profileLead ? `结合你当前的情况，${profileLead}。` : "",
+            "如果把范围收缩到广东，通常需要在学校层次、专业热度或保底厚度中至少让出一部分空间。",
+            safeLead,
+            "如果你愿意，我可以下一轮直接按“只留广东”的条件，帮你重排当前方案。"
+          ]
+            .filter(Boolean)
+            .join("");
     }
 
     if (resolvedIntent === "majorGroupRisk") {
@@ -350,15 +384,35 @@ function buildLocalChatReply(messages, planningContext, advisorMode = "xuefeng")
         : "";
 
       return isTeacherMode
-        ? [profileLead ? `还是按你的盘子来讲，${profileLead}。` : "", "第三件事最容易坑人。很多表不是分不够，是专业组看着稳，组内其实暗坑很多。你只要组里塞着自己完全不能接受的专业，这个组就不能算稳。", rushLead, steadyLead, riskLead, "你要是点头，我下一轮就直接按“最危险的三个专业组”给你做人工排雷。"].filter(Boolean).join("")
-        : [profileLead ? `结合你当前的方案，${profileLead}。` : "", "专业组风险的关键，不在组线本身，而在组内专业冷热差和你对调剂的接受范围。", rushLead, steadyLead, riskLead, "如果你愿意，我可以下一轮直接帮你筛出最需要人工复核的几个专业组。"].filter(Boolean).join("");
+        ? [
+            profileLead ? `还是按你的盘子来讲，${profileLead}。` : "",
+            "第三件事最容易坑人。很多表不是分不够，是专业组看着稳，组内其实暗坑很多。你只要组里塞着自己完全不能接受的专业，这个组就不能算稳。",
+            rushLead,
+            steadyLead,
+            riskLead,
+            "你要是点头，我下一轮就直接按“最危险的三个专业组”给你做人工排雷。"
+          ]
+            .filter(Boolean)
+            .join("")
+        : [
+            profileLead ? `结合你当前的方案，${profileLead}。` : "",
+            "专业组风险的关键，不在组线本身，而在组内专业冷热差和你对调剂的接受范围。",
+            rushLead,
+            steadyLead,
+            riskLead,
+            "如果你愿意，我可以下一轮直接帮你筛出最需要人工复核的几个专业组。"
+          ]
+            .filter(Boolean)
+            .join("");
     }
   }
 
   if (
     planningContext &&
     followUp &&
-    /(继续|然后|再说|那|如果|展开|具体|还是|重新|接着|第一|第二|第三|第一个|第二个|第三个|1|2|3)/.test(content)
+    /(继续|然后|再说|那|如果|展开|具体|还是|重新|接着|第一|第二|第三|第一个|第二个|第三个|1|2|3)/.test(
+      content
+    )
   ) {
     const memoryLead = previousAssistantMessage?.content
       ? `上一轮我重点说的是：${previousAssistantMessage.content.slice(0, 48)}...`
@@ -377,8 +431,28 @@ function buildLocalChatReply(messages, planningContext, advisorMode = "xuefeng")
       : "";
 
     return isTeacherMode
-      ? [profileLead ? `你这个情况我记着，${profileLead}。` : "", memoryLead, riskLead, safeLead, steadyLead, rushLead, "你这次追问不是回到起点，而是继续往下拆。你下一句最好直接问我三种之一：哪几个该降到稳，哪几个保底还不够保险，或者只留广东后整张表怎么重排。"].filter(Boolean).join("")
-      : [profileLead ? `我还记得你当前的情况：${profileLead}。` : "", memoryLead, riskLead, safeLead, steadyLead, rushLead, "如果你愿意，我们下一轮可以直接继续细化：哪些学校该下调风险、哪些保底还不够稳，或者只保留广东后整张表该怎么调整。"].filter(Boolean).join("");
+      ? [
+          profileLead ? `你这个情况我记着，${profileLead}。` : "",
+          memoryLead,
+          riskLead,
+          safeLead,
+          steadyLead,
+          rushLead,
+          "你这次追问不是回到起点，而是继续往下拆。你下一句最好直接问我三种之一：哪几个该降到稳，哪几个保底还不够保险，或者只留广东后整张表怎么重排。"
+        ]
+          .filter(Boolean)
+          .join("")
+      : [
+          profileLead ? `我还记得你当前的情况：${profileLead}。` : "",
+          memoryLead,
+          riskLead,
+          safeLead,
+          steadyLead,
+          rushLead,
+          "如果你愿意，我们下一轮可以直接继续细化：哪些学校该下调风险、哪些保底还不够稳，或者只保留广东后整张表该怎么调整。"
+        ]
+          .filter(Boolean)
+          .join("");
   }
 
   if (!planningContext) {
@@ -476,15 +550,28 @@ function resolveFollowUpIntent(content = "", previousAssistantContent = "") {
   }
 
   if (/^(继续|展开|细说|具体说|详细说|接着说|往下说)$/.test(normalized)) {
-    if (previous.includes("学校层次") || previous.includes("专业优先") || previous.includes("保学校") || previous.includes("保专业")) {
+    if (
+      previous.includes("学校层次") ||
+      previous.includes("专业优先") ||
+      previous.includes("保学校") ||
+      previous.includes("保专业")
+    ) {
       return "schoolMajor";
     }
 
-    if (previous.includes("只留广东") || previous.includes("留广东") || previous.includes("城市不是不能保")) {
+    if (
+      previous.includes("只留广东") ||
+      previous.includes("留广东") ||
+      previous.includes("城市不是不能保")
+    ) {
       return "guangdongOnly";
     }
 
-    if (previous.includes("专业组") || previous.includes("组线看着够") || previous.includes("暗坑")) {
+    if (
+      previous.includes("专业组") ||
+      previous.includes("组线看着够") ||
+      previous.includes("暗坑")
+    ) {
       return "majorGroupRisk";
     }
   }
@@ -492,10 +579,7 @@ function resolveFollowUpIntent(content = "", previousAssistantContent = "") {
   return null;
 }
 
-function buildFollowUpGuardrail({
-  currentUserMessage = "",
-  previousAssistantContent = ""
-}) {
+function buildFollowUpGuardrail({ currentUserMessage = "", previousAssistantContent = "" }) {
   const shortFollowUp = isShortFollowUpMessage(currentUserMessage);
   const previousAssistantSummary = summarizeAssistantReply(previousAssistantContent);
 
@@ -569,7 +653,9 @@ function collapseRepeatedParagraphs(reply = "") {
   const deduped = [];
   for (const paragraph of paragraphs) {
     const normalized = normalizeForComparison(paragraph);
-    const alreadyExists = deduped.some((existing) => normalizeForComparison(existing) === normalized);
+    const alreadyExists = deduped.some(
+      (existing) => normalizeForComparison(existing) === normalized
+    );
     if (!alreadyExists) {
       deduped.push(paragraph);
     }
@@ -644,5 +730,5 @@ function normalizeForComparison(content = "") {
   return String(content)
     .toLowerCase()
     .replace(/\s+/g, "")
-    .replace(/[，。、“”"':：;；!！?？（）()\[\]【】,.]/g, "");
+    .replace(/[[\]，。、“”"':：;；!！?？（）()【】,.]/g, "");
 }

@@ -3,43 +3,43 @@
 }
 
 const UNIVERSITY_RESOURCE_LINKS = {
-  "清华大学": {
+  清华大学: {
     overviewUrl: "https://www.tsinghua.edu.cn/",
     admissionsUrl: "https://www.admissions.tsinghua.edu.cn/"
   },
-  "北京大学": {
+  北京大学: {
     overviewUrl: "https://www.pku.edu.cn/",
     admissionsUrl: "https://bkzs.pku.edu.cn/"
   },
-  "复旦大学": {
+  复旦大学: {
     overviewUrl: "https://www.fudan.edu.cn/"
   },
-  "武汉大学": {
+  武汉大学: {
     overviewUrl: "https://www.whu.edu.cn/"
   },
-  "厦门大学": {
+  厦门大学: {
     overviewUrl: "https://www.xmu.edu.cn/"
   },
-  "中山大学": {
+  中山大学: {
     overviewUrl: "https://www.sysu.edu.cn/"
   },
-  "华南理工大学": {
+  华南理工大学: {
     overviewUrl: "https://www.scut.edu.cn/"
   },
-  "暨南大学": {
+  暨南大学: {
     overviewUrl: "https://www.jnu.edu.cn/"
   },
-  "华南师范大学": {
+  华南师范大学: {
     overviewUrl: "https://www.scnu.edu.cn/"
   },
-  "深圳大学": {
+  深圳大学: {
     overviewUrl: "https://www.szu.edu.cn/"
   },
-  "南方科技大学": {
+  南方科技大学: {
     overviewUrl: "https://www.sustech.edu.cn/",
     admissionsUrl: "https://admissions.sustech.edu.cn/"
   },
-  "广东工业大学": {
+  广东工业大学: {
     overviewUrl: "https://www.gdut.edu.cn/"
   }
 };
@@ -54,11 +54,83 @@ const PROFILE_DEFAULTS = {
   brochureNotes: []
 };
 
+const UNIVERSITY_IMAGE_ALIASES = universityImageCatalog;
+
+const UNIVERSITY_FALLBACK_IMAGE_POOL = universityImageCatalog.map(
+  (entry) => `/universities/${entry.slug}/cover.jpg`
+);
+
 function createProfile(profile) {
   return {
     ...PROFILE_DEFAULTS,
     ...profile
   };
+}
+
+function buildUniversityVisuals(slug) {
+  const cover = `/universities/${slug}/cover.jpg`;
+
+  return {
+    assetSlug: slug,
+    cover,
+    image: cover,
+    photo: cover,
+    banner: cover,
+    campusImage: cover,
+    thumbnail: cover,
+    gallery: [cover]
+  };
+}
+
+function pickFallbackUniversityImage(universityName) {
+  const normalizedName = normalizeUniversityName(universityName);
+  const mappedSlug = findUniversityAssetSlug(universityName);
+
+  if (mappedSlug) {
+    return `/universities/${mappedSlug}/cover.jpg`;
+  }
+
+  if (!normalizedName) {
+    return UNIVERSITY_FALLBACK_IMAGE_POOL[0];
+  }
+
+  return `https://picsum.photos/seed/${encodeURIComponent(`gaokao-${normalizedName}`)}/1600/900`;
+}
+
+function buildFallbackUniversityVisuals(universityName) {
+  const cover = pickFallbackUniversityImage(universityName);
+
+  return {
+    assetSlug: "fallback",
+    cover,
+    image: cover,
+    photo: cover,
+    banner: cover,
+    campusImage: cover,
+    thumbnail: cover,
+    gallery: [cover]
+  };
+}
+
+function pickFirstImage(...candidates) {
+  return candidates.find((value) => typeof value === "string" && value.trim());
+}
+
+function findUniversityAssetSlug(universityName) {
+  const normalizedName = normalizeUniversityName(universityName);
+
+  if (!normalizedName) {
+    return "";
+  }
+
+  const matchedEntry = UNIVERSITY_IMAGE_ALIASES.find((entry) =>
+    entry.names.some((alias) => {
+      const normalizedAlias = normalizeUniversityName(alias);
+      return normalizedName.includes(normalizedAlias) || normalizedAlias.includes(normalizedName);
+    })
+  );
+
+  return matchedEntry?.slug || "";
 }
 
 export const universityProfiles = [
@@ -71,6 +143,7 @@ export const universityProfiles = [
     schoolType: "研究型综合大学",
     level: "顶尖平台 / 高强度竞争环境",
     image: buildCommonsImage("3 Tsinghua.jpg"),
+    ...buildUniversityVisuals("tsinghua"),
     overview:
       "清华大学以工科见长，同时在计算机、电子信息、建筑、经管和基础学科方向都有极强的平台能力，适合追求顶尖科研资源与高强度学习环境的考生。",
     highlights: ["工科顶级平台", "科研资源密集", "国际交换机会丰富"],
@@ -105,6 +178,7 @@ export const universityProfiles = [
     schoolType: "研究型综合大学",
     level: "顶尖平台 / 学术氛围突出",
     image: buildCommonsImage("Peking University.jpg"),
+    ...buildUniversityVisuals("peking"),
     overview:
       "北京大学在人文社科、基础理科、医学与前沿交叉学科方面具有极强影响力，适合对平台、学术氛围和综合成长空间要求很高的考生。",
     highlights: ["人文社科强势", "基础理科扎实", "综合平台高度突出"],
@@ -139,11 +213,16 @@ export const universityProfiles = [
     schoolType: "研究型综合大学",
     level: "头部综合平台 / 上海资源集中",
     image: buildCommonsImage("Fudan University - panoramio (7).jpg"),
+    ...buildUniversityVisuals("fudan"),
     overview:
       "复旦大学在医学、新闻传播、经济管理、数学和基础理科等方向表现突出，适合希望兼顾学校平台、城市资源和专业深造的考生。",
     highlights: ["位于上海核心资源区", "文理医综合实力强", "升学与就业出口优质"],
     keyMajors: ["临床医学", "新闻传播学类", "经济学类", "数学类", "计算机类"],
-    employmentDirections: ["上海头部企业与金融平台", "医学深造与医院体系", "海内外升学与研究型路径"],
+    employmentDirections: [
+      "上海头部企业与金融平台",
+      "医学深造与医院体系",
+      "海内外升学与研究型路径"
+    ],
     suitableFor: [
       "看重学校层次，也看重城市资源密度的考生",
       "愿意在热门城市承受更高分数竞争的人",
@@ -173,6 +252,7 @@ export const universityProfiles = [
     schoolType: "综合类名校",
     level: "全国高认可度 / 综合平衡型平台",
     image: buildCommonsImage("Gate of the Wuhan University.jpg"),
+    ...buildUniversityVisuals("whu"),
     overview:
       "武汉大学在测绘、法学、新闻传播、计算机、水利和基础学科等方向都有不错积累，校园环境与综合资源兼具，是兼顾平台和城市平衡度的热门学校。",
     highlights: ["综合名校", "校园辨识度高", "法学与测绘等方向强势"],
@@ -207,6 +287,7 @@ export const universityProfiles = [
     schoolType: "综合类名校",
     level: "综合平台 / 环境吸引力强",
     image: buildCommonsImage("Xiamen University 07107-Xiamen (48814192891).jpg"),
+    ...buildUniversityVisuals("xmu"),
     overview:
       "厦门大学在经济、会计、化学、海洋、新闻传播等方向长期有较强口碑，适合希望兼顾学校气质、地理环境和综合平台的考生。",
     highlights: ["校园环境知名", "经管与理科兼顾", "升学就业路径清晰"],
@@ -241,6 +322,7 @@ export const universityProfiles = [
     schoolType: "研究型综合大学",
     level: "华南头部平台 / 湾区资源密集",
     image: buildCommonsImage("中山大学 - Sun Yat-sen University - 2015.12 - panoramio (1).jpg"),
+    ...buildUniversityVisuals("sysu"),
     overview:
       "中山大学是华南地区综合实力极强的高校，在医学、管理、计算机、生态、生物和人文社科等方向都具备较强平台优势，适合重视学校层次和湾区资源的考生。",
     highlights: ["华南综合头部平台", "医学与理科基础强", "大湾区资源密集"],
@@ -275,6 +357,7 @@ export const universityProfiles = [
     schoolType: "工科强校",
     level: "工科平台 / 大湾区就业连接强",
     image: buildCommonsImage("South China University of Technology South Gate.jpg"),
+    ...buildUniversityVisuals("scut"),
     overview:
       "华南理工大学在计算机、电子信息、自动化、建筑、材料和轻工食品等领域优势明显，适合想留在大湾区、同时追求工科平台和就业出口的考生。",
     highlights: ["工科平台扎实", "大湾区就业连接强", "建筑与信息类受欢迎"],
@@ -309,6 +392,7 @@ export const universityProfiles = [
     schoolType: "综合类高校",
     level: "城市资源型平台 / 国际化特色明显",
     image: buildCommonsImage("Jinan University Guangzhou South campus.jpg"),
+    ...buildUniversityVisuals("jnu"),
     overview:
       "暨南大学在新闻传播、经管、临床医学、应用统计和国际化培养方面有不错口碑，适合想留在广州、同时兼顾综合平台和专业弹性的考生。",
     highlights: ["广州区位优势", "新闻传播与经管有口碑", "国际化特色明显"],
@@ -343,6 +427,7 @@ export const universityProfiles = [
     schoolType: "师范强校",
     level: "稳定就业导向 / 广东本地认可度高",
     image: buildCommonsImage("South China Normal University in 2024-08 01.jpg"),
+    ...buildUniversityVisuals("scnu"),
     overview:
       "华南师范大学在教育学、心理学、数学、物理、计算机和师范培养方向有较强积累，适合既看重稳定就业又希望保留一定综合平台的考生。",
     highlights: ["师范体系成熟", "心理与教育方向突出", "广东本地认可度高"],
@@ -377,11 +462,16 @@ export const universityProfiles = [
     schoolType: "城市资源型高校",
     level: "就业导向 / 深圳资源加成明显",
     image: buildCommonsImage("SHENZHEN UNIVERSITY (7).jpg"),
+    ...buildUniversityVisuals("szu"),
     overview:
       "深圳大学依托深圳城市资源，在计算机、电子信息、建筑、金融和新兴交叉方向的吸引力很强，适合城市优先、就业优先的考生。",
     highlights: ["深圳就业资源密集", "信息类热度高", "城市吸引力显著"],
     keyMajors: ["计算机类", "电子信息类", "建筑类", "金融学", "人工智能"],
-    employmentDirections: ["深圳互联网与高新技术企业", "金融与城市服务业", "本地实习转正与创业生态"],
+    employmentDirections: [
+      "深圳互联网与高新技术企业",
+      "金融与城市服务业",
+      "本地实习转正与创业生态"
+    ],
     suitableFor: [
       "城市优先、就业优先且明确倾向深圳的考生",
       "对实习、产业链接和毕业落地有强诉求的人",
@@ -411,6 +501,7 @@ export const universityProfiles = [
     schoolType: "新型研究型大学",
     level: "小而强平台 / 研究导向鲜明",
     image: buildCommonsImage("Southern University of Science and Technology 1.jpg"),
+    ...buildUniversityVisuals("sustech"),
     overview:
       "南方科技大学以理工科和研究型培养见长，适合看重科研氛围、小而强平台和新型人才培养模式的考生。",
     highlights: ["研究型培养强", "理工科特色鲜明", "深圳创新资源丰富"],
@@ -444,12 +535,19 @@ export const universityProfiles = [
     label: "本地工科与就业导向代表",
     schoolType: "应用型工科高校",
     level: "本地就业导向 / 珠三角产业连接强",
-    image: buildCommonsImage("Guangdong University of Technology, Guangzhou Higher Education Mega Center.jpg"),
+    image: buildCommonsImage(
+      "Guangdong University of Technology, Guangzhou Higher Education Mega Center.jpg"
+    ),
+    ...buildUniversityVisuals("gdut"),
     overview:
       "广东工业大学在自动化、机械、计算机、材料、电气等方向有较强本地产业对接能力，适合更看重应用型工科和珠三角就业落地的考生。",
     highlights: ["本地产业链接紧密", "工科就业导向强", "广东录取覆盖面广"],
     keyMajors: ["自动化", "机械类", "计算机类", "电气工程", "材料类"],
-    employmentDirections: ["珠三角制造业与工程岗", "本地数字化与自动化岗位", "应用型读研与稳定落地就业"],
+    employmentDirections: [
+      "珠三角制造业与工程岗",
+      "本地数字化与自动化岗位",
+      "应用型读研与稳定落地就业"
+    ],
     suitableFor: [
       "更看重就业落地和地域稳定性的考生",
       "能接受应用型工科路径、希望在广东发展的家庭",
@@ -472,22 +570,40 @@ export const universityProfiles = [
   })
 ];
 
-const genericHighlights = ["建议结合当年招生简章复核", "优先核对专业组和选科限制", "结合位次而非只看裸分"];
+const genericHighlights = [
+  "建议结合当年招生简章复核",
+  "优先核对专业组和选科限制",
+  "结合位次而非只看裸分"
+];
+
+function findUniversityProfile(universityName) {
+  const normalizedName = normalizeUniversityName(universityName);
+
+  if (!normalizedName) {
+    return null;
+  }
+
+  return (
+    universityProfiles.find((profile) =>
+      [profile.name, ...(profile.aliases || [])].some((alias) =>
+        normalizedName.includes(normalizeUniversityName(alias))
+      )
+    ) ||
+    universityProfiles.find((profile) =>
+      [profile.name, ...(profile.aliases || [])].some((alias) =>
+        normalizeUniversityName(alias).includes(normalizedName)
+      )
+    ) ||
+    null
+  );
+}
 
 export function getUniversityProfile(universityName) {
   if (!universityName) {
     return null;
   }
 
-  const normalizedName = normalizeUniversityName(universityName);
-  const matchedProfile =
-    universityProfiles.find((profile) =>
-      [profile.name, ...(profile.aliases || [])].some((alias) => normalizedName.includes(normalizeUniversityName(alias)))
-    ) ||
-    universityProfiles.find((profile) =>
-      [profile.name, ...(profile.aliases || [])].some((alias) => normalizeUniversityName(alias).includes(normalizedName))
-    );
-
+  const matchedProfile = findUniversityProfile(universityName);
   if (matchedProfile) {
     return matchedProfile;
   }
@@ -500,16 +616,13 @@ export function getUniversityProfile(universityName) {
     label: "高校档案待补充",
     schoolType: "待补充",
     level: "建议人工复核",
-    image: buildCommonsImage("Peking University.jpg"),
+    ...buildFallbackUniversityVisuals(universityName),
     overview:
       "当前这所高校还没有接入专门的图文档案，但你仍然可以查看当前推荐结果中的专业、分数线、位次、学费和风险提示，并继续用 AI 顾问追问这所学校。",
     highlights: genericHighlights,
     keyMajors: ["建议查看学校招生网专业目录", "优先确认是否有选科限制"],
     employmentDirections: ["结合学校官网就业质量报告人工核查", "重点看你能接受的专业出口"],
-    suitableFor: [
-      "愿意自己再做一轮人工核查的考生",
-      "希望先根据当前推荐结果快速做初筛的人"
-    ],
+    suitableFor: ["愿意自己再做一轮人工核查的考生", "希望先根据当前推荐结果快速做初筛的人"],
     campusNotes: [
       "优先确认培养校区、住宿条件、是否存在异地办学或分校区培养。",
       "如果是保底志愿，务必确认你能接受调剂范围和专业去向。"
@@ -527,6 +640,27 @@ export function getUniversityProfile(universityName) {
   });
 }
 
+export function resolveUniversityImage(source, universityName = "") {
+  const targetName = universityName || source?.university || source?.name || source?.title || "";
+  const matchedProfile = source?.profile || findUniversityProfile(targetName);
+
+  return pickFirstImage(
+    source?.cover,
+    source?.image,
+    source?.photo,
+    source?.banner,
+    source?.campusImage,
+    source?.thumbnail,
+    matchedProfile?.cover,
+    matchedProfile?.image,
+    matchedProfile?.photo,
+    matchedProfile?.banner,
+    matchedProfile?.campusImage,
+    matchedProfile?.thumbnail,
+    pickFallbackUniversityImage(targetName)
+  );
+}
+
 export function getUniversityResourceLinks(universityName) {
   const profile = getUniversityProfile(universityName);
   const resourceEntry =
@@ -535,7 +669,9 @@ export function getUniversityResourceLinks(universityName) {
     null;
 
   return {
-    overviewUrl: resourceEntry?.overviewUrl || buildBingSearchUrl(`${profile?.name || universityName} 学校简介`),
+    overviewUrl:
+      resourceEntry?.overviewUrl ||
+      buildBingSearchUrl(`${profile?.name || universityName} 学校简介`),
     admissionsUrl:
       resourceEntry?.admissionsUrl ||
       buildBingSearchUrl(`${profile?.name || universityName} 本科招生 招生简章`),
@@ -550,5 +686,8 @@ function buildBingSearchUrl(keyword) {
 }
 
 function normalizeUniversityName(value) {
-  return String(value || "").replace(/\s+/g, "").trim();
+  return String(value || "")
+    .replace(/\s+/g, "")
+    .trim();
 }
+import { universityImageCatalog } from "./universityImageCatalog.js";

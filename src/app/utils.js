@@ -39,13 +39,16 @@ export function createStarterChat(mode = DEFAULT_ADVISOR_MODE) {
   const config = getAdvisorModeConfig(mode);
   const introByMode = {
     xuefeng:
-      "你把我当成一个懂广东志愿规则、愿意讲透利弊的老师来聊就行。我不会只安慰你，我会先帮你看分数、位次、专业组、城市和就业出口，再直接告诉你哪些能冲、哪些别硬冲。",
+      "你把我当成一个懂高考规则、愿意把话说透的老师来聊就行。我不会只安慰你，我会先帮你看分数、位次、专业组、城市和就业出口，再直接告诉你哪些能冲、哪些别硬冲。",
     gentle:
       "你可以把我当成一个陪你把志愿一步步梳理清楚的顾问。我们先把信息补完整，再一起把学校、专业、城市和风险拆开讲明白。"
   };
 
   return [
-    createChatMessage("assistant", `${config.opening}\n\n${introByMode[mode] || introByMode.gentle}`)
+    createChatMessage(
+      "assistant",
+      `${config.opening}\n\n${introByMode[mode] || introByMode.gentle}`
+    )
   ];
 }
 
@@ -155,22 +158,29 @@ export function scheduleChatInputFocus({ isAdvisorRouteActive, inlineInputRef, o
 
 export function buildAdvisorContextHighlights({ formState, profileHighlights, planStats, result }) {
   const summary = [
-    { label: "省份 / 科类", value: `${formState.province || "待补"} · ${formState.track || "待补"}` },
-    { label: "分数 / 位次", value: `${formState.score || "--"} 分 · ${formState.rank || "--"} 位` },
+    {
+      label: "省份 / 科类",
+      value: `${formState.province || "待补充"} / ${formState.track || "待补充"}`
+    },
+    { label: "分数 / 位次", value: `${formState.score || "--"} 分 / ${formState.rank || "--"} 位` },
     {
       label: "选科",
-      value: formState.selectedSubjects?.length ? formState.selectedSubjects.join(" / ") : "待补选科"
+      value: formState.selectedSubjects?.length
+        ? formState.selectedSubjects.join(" / ")
+        : "待补选科"
     },
     {
       label: "方案状态",
-      value: result?.applicationPlan?.length ? `已生成 ${planStats.length} 层冲稳保方案` : "尚未生成正式方案"
+      value: result?.applicationPlan?.length
+        ? `已生成 ${planStats.length} 层冲稳保方案`
+        : "尚未生成正式方案"
     }
   ];
 
   if (profileHighlights?.length) {
     summary.push({
       label: "画像摘要",
-      value: profileHighlights.slice(0, 3).join(" · ")
+      value: profileHighlights.slice(0, 3).join(" / ")
     });
   }
 
@@ -196,7 +206,7 @@ export function buildPlanContextPrompt(result, formState) {
 
   return [
     "请直接带着我当前这张志愿表继续分析，不要重新从零开始。",
-    `我的基础信息是：${formState.province || "待补"}，${formState.track || "待补"}，${formState.score || "--"} 分，位次 ${formState.rank || "--"}，选科 ${selections}。`,
+    `我的基础信息是：${formState.province || "待补充"}，${formState.track || "待补充"}，${formState.score || "--"} 分，位次 ${formState.rank || "--"}，选科 ${selections}。`,
     `当前冲刺层代表是：${rushTier?.schools?.[0]?.university || "暂无"}。`,
     `当前稳妥层代表是：${steadyTier?.schools?.[0]?.university || "暂无"}。`,
     `当前保底层代表是：${safeTier?.schools?.[0]?.university || "暂无"}。`,
@@ -204,14 +214,14 @@ export function buildPlanContextPrompt(result, formState) {
   ].join("");
 }
 
-export function buildTradeoffPanel(riskProfile, formState) {
+export function buildTradeoffPanel(riskProfile, _formState) {
   if (riskProfile.majorPriorityStrong) {
     return {
-      title: "你当前是“专业优先”路线",
+      title: "你当前更像“专业优先”路线",
       description:
         "这意味着你更在意未来能学到什么、将来能靠什么吃饭。学校名气和城市光环可以适当让一点，但专业组里一定要是你能接受的。",
       nextSteps: [
-        "先删掉不能接受的专业组，再看学校层次",
+        "先删掉完全不能接受的专业组，再看学校层次",
         "如果只留大城市，先接受学校平台可能要下调",
         "继续追问：哪些学校是看着稳、其实调剂风险高"
       ]
@@ -220,7 +230,7 @@ export function buildTradeoffPanel(riskProfile, formState) {
 
   if (riskProfile.cityPriorityStrong) {
     return {
-      title: "你当前是“城市优先”路线",
+      title: "你当前更像“城市优先”路线",
       description:
         "你更在意未来四年的城市资源、实习机会和生活环境。代价通常是学校层次、专业热度或者保底厚度要往下让。",
       nextSteps: [
@@ -234,7 +244,7 @@ export function buildTradeoffPanel(riskProfile, formState) {
   return {
     title: "你当前更像“学校平台优先”路线",
     description:
-      "这类取舍更重视学校品牌和平台资源，但要小心专业组里冷热差太大，或者进了学校却读不到自己真正想学的方向。",
+      "这类取舍更重视学校品牌和平台资源，但要小心专业组里冷热差过大，或者进了学校却读不到自己真正想学的方向。",
     nextSteps: [
       "重点检查每个专业组里是否存在你完全不能接受的专业",
       "把保底组再做厚一点，防止平台执念导致滑档",

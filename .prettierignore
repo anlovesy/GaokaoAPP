@@ -1,0 +1,8 @@
+dist
+node_modules
+public/universities
+tmp-runtime
+_archive
+.agents
+docs
+server/data/generated
