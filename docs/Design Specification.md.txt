@@ -1,0 +1,684 @@
+# AI 高考志愿顾问（Gaokao AI Advisor）
+
+# UI / UX Design Specification v2.0
+
+## 适用于 Codex 全站重构
+
+---
+
+# 一、项目目标（Mission）
+
+本项目不是一个普通的高考志愿填报网站。
+
+它是：
+
+> 一个高端 AI 高考志愿顾问（AI Admission Strategist）。
+
+它应该给用户的第一感觉是：
+
+* 专业
+* 高级
+* 有科技感
+* 有品牌感
+* 值得信任
+
+而不是：
+
+* 教育网站
+* 管理后台
+* SaaS Dashboard
+* 数据管理系统
+
+整个网站应该更像：
+
+Apple Product Page
+
+Linear
+
+Vercel
+
+Framer
+
+Raycast
+
+ChatGPT Desktop
+
+Federico Pian Portfolio
+
+这是整个项目唯一需要遵循的设计方向。
+
+---
+
+# 二、本次任务边界（必须遵守）
+
+禁止修改：
+
+* 后端代码
+* API
+* 数据库
+* SQL
+* Prisma
+* ORM
+* RAG
+* Agent
+* Tool Calling
+* Prompt
+* Workflow
+* 登录逻辑
+* 权限系统
+* 聊天逻辑
+* 志愿生成逻辑
+* 页面路由
+* URL
+
+仅允许修改：
+
+* UI
+* UX
+* Layout
+* Typography
+* Motion
+* Component
+* CSS
+* Tailwind
+* Framer Motion
+* GSAP
+* Lenis
+* 图片资源
+* Design Token
+
+业务逻辑必须保持 100% 不变。
+
+---
+
+# 三、总体设计原则
+
+整个网站遵循：
+
+"Experience First"
+
+而不是：
+
+"Function First"
+
+用户进入网站以后，
+
+不要看到：
+
+平台介绍
+
+功能介绍
+
+AI 能力
+
+工作流程
+
+模型说明
+
+系统说明
+
+游客说明
+
+正式用户说明
+
+不要解释产品。
+
+让用户直接体验产品。
+
+遵循：
+
+Apple 官网设计哲学：
+
+"Less Interface, More Experience."
+
+---
+
+# 四、设计参考（优先级）
+
+Primary Reference（主要参考）：
+
+Federico Pian
+
+Secondary Reference：
+
+Apple
+
+Motion Reference：
+
+Framer
+
+Typography：
+
+Apple
+
+Component：
+
+Linear
+
+Chat：
+
+ChatGPT Desktop
+
+严禁参考：
+
+Element Plus 官网
+
+Ant Design Pro
+
+Admin Dashboard
+
+SaaS Template
+
+Bootstrap 后台模板
+
+任何国产后台系统。
+
+---
+
+# 五、整体视觉语言
+
+关键词：
+
+Minimal
+
+Premium
+
+Elegant
+
+Immersive
+
+Breathing Space
+
+Soft Motion
+
+Editorial Layout
+
+Future
+
+不要：
+
+大量卡片
+
+大量边框
+
+大量按钮
+
+大量文字
+
+大量解释
+
+大量统计
+
+大量标签
+
+减少组件数量。
+
+增加留白。
+
+让页面呼吸。
+
+---
+
+# 六、页面内容规范
+
+删除所有介绍性内容。
+
+包括：
+
+平台介绍
+
+平台结构
+
+模型能力
+
+当前数据状态
+
+高校留影墙介绍
+
+正式用户可以获得
+
+游客体验边界
+
+为什么这样设计
+
+AI介绍
+
+FAQ
+
+帮助
+
+教程
+
+说明
+
+提示框
+
+所有长文本。
+
+每个页面：
+
+最多：
+
+一个标题
+
+一句副标题（20字以内）
+
+一个主要按钮
+
+即可。
+
+---
+
+# 七、首页（Landing Page）
+
+首页采用 Scroll Storytelling。
+
+Section 1：
+
+Hero。
+
+左侧：
+
+超大标题。
+
+一句价值主张。
+
+CTA。
+
+右侧：
+
+全国高校图片自由漂浮。
+
+鼠标视差。
+
+Hover Motion。
+
+Section 2：
+
+高校图片墙。
+
+自动滚动。
+
+Hover 放大。
+
+不要介绍。
+
+Section 3：
+
+真实志愿案例。
+
+采用 Story Card。
+
+Section 4：
+
+开始体验。
+
+结束。
+
+首页不要：
+
+Dashboard
+
+统计数字
+
+模型说明
+
+系统介绍
+
+数据卡片。
+
+---
+
+# 八、登录页
+
+删除：
+
+左侧介绍
+
+功能说明
+
+正式用户说明
+
+游客说明
+
+全部删除。
+
+左侧：
+
+动态高校照片。
+
+自动滚动。
+
+Hover。
+
+Parallax。
+
+右侧：
+
+Logo
+
+账号
+
+密码
+
+登录按钮
+
+体验按钮
+
+Glass Card。
+
+不要任何介绍文字。
+
+---
+
+# 九、工作台
+
+采用：
+
+Linear Layout。
+
+三栏：
+
+左：
+
+学生画像。
+
+中：
+
+志愿方案。
+
+右：
+
+AI顾问。
+
+通过：
+
+Whitespace
+
+Spacing
+
+Hierarchy
+
+组织内容。
+
+不要依赖卡片。
+
+不要大量 Border。
+
+---
+
+# 十、AI 顾问
+
+参考：
+
+ChatGPT Desktop。
+
+不要像：
+
+聊天窗口。
+
+而是：
+
+顾问工作区。
+
+消息：
+
+Streaming
+
+Markdown
+
+Citation
+
+Thinking
+
+Typing Animation
+
+输入框：
+
+固定底部。
+
+聊天：
+
+无限滚动。
+
+支持连续追问。
+
+不要任何教程。
+
+---
+
+# 十一、高校展示
+
+所有高校：
+
+必须拥有独立图片。
+
+禁止：
+
+全部使用默认图片。
+
+图片来源：
+
+校园
+
+教学楼
+
+图书馆
+
+校门
+
+操场
+
+标志建筑
+
+不要：
+
+聘书
+
+证书
+
+无关图片。
+
+图片采用：
+
+Lazy Loading
+
+Blur Placeholder
+
+Hover Zoom
+
+Parallax。
+
+---
+
+# 十二、设计 Token
+
+Primary：
+
+#12384C
+
+Background：
+
+#F8FAFC
+
+Accent：
+
+#FF6B4A
+
+Text：
+
+#0F172A
+
+Radius：
+
+24px
+
+Shadow：
+
+Soft
+
+Blur：
+
+16px
+
+Spacing：
+
+8pt System。
+
+---
+
+# 十三、动画
+
+必须加入：
+
+Framer Motion。
+
+GSAP。
+
+Lenis。
+
+包含：
+
+Scroll Reveal
+
+Fade
+
+Scale
+
+Mask
+
+Image Float
+
+Mouse Follow
+
+Magnetic Button
+
+Smooth Scroll
+
+Page Transition
+
+不要静态页面。
+
+---
+
+# 十四、性能要求
+
+不要：
+
+Layout Shift。
+
+不要：
+
+Hydration Error。
+
+不要：
+
+Console Error。
+
+不要：
+
+Unused CSS。
+
+不要：
+
+Unused Component。
+
+Lighthouse：
+
+Performance ≥ 90
+
+Accessibility ≥ 90
+
+Best Practice ≥ 90
+
+SEO ≥ 90
+
+---
+
+# 十五、开发流程（必须遵守）
+
+禁止一次重构整个网站。
+
+按 Sprint 开发。
+
+Sprint 1：
+
+Design Token
+
+Sprint 2：
+
+首页
+
+Sprint 3：
+
+登录
+
+Sprint 4：
+
+工作台
+
+Sprint 5：
+
+AI 顾问
+
+Sprint 6：
+
+高校详情
+
+Sprint 7：
+
+动画
+
+Sprint 8：
+
+性能优化
+
+每完成一个 Sprint：
+
+确保：
+
+可以运行。
+
+没有 Type Error。
+
+没有 Console Error。
+
+没有 Hydration Error。
+
+没有布局 Bug。
+
+再继续下一阶段。
+
+---
+
+# 十六、最终目标
+
+最终效果应该达到：
+
+"不像一个教育网站。"
+
+而像：
+
+"一个价值数万元 AI 高考志愿咨询服务的数字产品。"
+
+整个网站应具备：
+
+品牌感
+
+高级感
+
+沉浸感
+
+电影级滚动体验
+
+优秀的空间留白
+
+流畅的交互动画
+
+而不是一个功能展示页面。
+
+不要在现有 UI 上继续修修补补。
+
+请将当前页面视为低保真原型（Wireframe）。
+
+保留所有业务逻辑，从零重新设计整个视觉体系。

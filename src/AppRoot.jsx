@@ -8,6 +8,7 @@ import {
   useRef,
   useState
 } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   advisorQuickPrompts,
   defaultFormState,
@@ -51,6 +52,7 @@ import {
   scheduleChatInputFocus,
   writeStoredUniversityDetail
 } from "./app/utils.js";
+import { pageShellTransition } from "./motion/presets.js";
 const AUTH_WALL_ROWS = buildAuthWallRows(universityProfiles);
 const LandingScreen = lazy(() =>
   import("./pages/landing/LandingScreen.jsx").then((module) => ({
@@ -880,117 +882,134 @@ function AppRoot() {
 
   return (
     <Suspense fallback={<ScreenFallback />}>
-      <div className="app-shell">
-        {screen === SCREEN_LANDING ? (
-          <LandingScreen
-            dataStatus={dataStatus}
-            providers={providers}
-            onPrimaryAction={goToAuth}
-            onGuestAction={handleEnterGuest}
-          />
-        ) : null}
+      <div className="app-shell app-experience-shell">
+        <div className="app-experience-orb orb-a" aria-hidden="true" />
+        <div className="app-experience-orb orb-b" aria-hidden="true" />
 
-        {screen === SCREEN_AUTH ? (
-          <AuthScreen
-            authWallRows={AUTH_WALL_ROWS}
-            currentUser={currentUser}
-            loginError={loginError}
-            loginForm={loginForm}
-            onBack={goToLanding}
-            onChangeLoginForm={setLoginForm}
-            onGuestAction={handleEnterGuest}
-            onLogin={handleLogin}
-          />
-        ) : null}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={screen}
+            className="app-screen-stage"
+            initial="initial"
+            animate="enter"
+            exit="exit"
+            variants={pageShellTransition}
+          >
+            {screen === SCREEN_LANDING ? (
+              <LandingScreen
+                dataStatus={dataStatus}
+                providers={providers}
+                onPrimaryAction={goToAuth}
+                onGuestAction={handleEnterGuest}
+              />
+            ) : null}
 
-        {screen === SCREEN_WORKSPACE ? (
-          <WorkspaceScreen
-            activeQuickQuestions={activeQuickQuestions}
-            advisorConfig={advisorConfig}
-            canGeneratePlan={canGeneratePlan}
-            chatEnabled={chatEnabled}
-            chatInput={chatInput}
-            chatLoading={chatLoading}
-            chatMessages={chatMessages}
-            currentRiskOption={currentRiskOption}
-            currentUser={currentUser}
-            dataStatus={dataStatus}
-            error={error}
-            formState={formState}
-            goToAuth={goToAuth}
-            goToLanding={goToLanding}
-            guestMode={guestMode}
-            handleChangeUserRole={handleChangeUserRole}
-            handleCreateUser={handleCreateUser}
-            handleDeleteUser={handleDeleteUser}
-            handleLogout={handleLogout}
-            handlePrintPlan={handlePrintPlan}
-            handleResetUserPassword={handleResetUserPassword}
-            handleSendChat={handleSendChat}
-            handleSendPlanningContextToAdvisor={handleSendPlanningContextToAdvisor}
-            handleSubmit={handleSubmit}
-            hasPlanningContext={hasPlanningContext}
-            historyData={historyData}
-            inlineChatInputRef={inlineChatInputRef}
-            loading={loading}
-            mandatoryCheck={mandatoryCheck}
-            newUserForm={newUserForm}
-            openAdvisorPanel={openAdvisorPanel}
-            passwordResetForm={passwordResetForm}
-            planStats={planStats}
-            profileHighlights={profileHighlights}
-            providers={providers}
-            result={result}
-            openUniversityDetail={openUniversityDetail}
-            selectedConstraintLabels={selectedConstraintLabels}
-            selectedInterestLabels={selectedInterestLabels}
-            selectedNeedLabels={selectedNeedLabels}
-            selectedPersonalityLabels={selectedPersonalityLabels}
-            selectedSchoolLabels={selectedSchoolLabels}
-            setChatInput={setChatInput}
-            setNewUserForm={setNewUserForm}
-            setPasswordResetForm={setPasswordResetForm}
-            soulQuestions={soulQuestions}
-            tradeoffPanel={tradeoffPanel}
-            updateField={updateField}
-            toggleSelection={toggleSelection}
-            userList={userList}
-            userManagementLoading={userManagementLoading}
-            userManagementMessage={userManagementMessage}
-            workspaceTab={workspaceTab}
-            setWorkspaceTab={setWorkspaceTab}
-          />
-        ) : null}
+            {screen === SCREEN_AUTH ? (
+              <AuthScreen
+                authWallRows={AUTH_WALL_ROWS}
+                currentUser={currentUser}
+                loginError={loginError}
+                loginForm={loginForm}
+                onBack={goToLanding}
+                onChangeLoginForm={setLoginForm}
+                onGuestAction={handleEnterGuest}
+                onLogin={handleLogin}
+              />
+            ) : null}
 
-        {screen === SCREEN_UNIVERSITY ? (
-          <UniversityScreen university={selectedUniversityDetail} onBack={closeUniversityDetail} />
-        ) : null}
+            {screen === SCREEN_WORKSPACE ? (
+              <WorkspaceScreen
+                activeQuickQuestions={activeQuickQuestions}
+                advisorConfig={advisorConfig}
+                canGeneratePlan={canGeneratePlan}
+                chatEnabled={chatEnabled}
+                chatInput={chatInput}
+                chatLoading={chatLoading}
+                chatMessages={chatMessages}
+                currentRiskOption={currentRiskOption}
+                currentUser={currentUser}
+                dataStatus={dataStatus}
+                error={error}
+                formState={formState}
+                goToAuth={goToAuth}
+                goToLanding={goToLanding}
+                guestMode={guestMode}
+                handleChangeUserRole={handleChangeUserRole}
+                handleCreateUser={handleCreateUser}
+                handleDeleteUser={handleDeleteUser}
+                handleLogout={handleLogout}
+                handlePrintPlan={handlePrintPlan}
+                handleResetUserPassword={handleResetUserPassword}
+                handleSendChat={handleSendChat}
+                handleSendPlanningContextToAdvisor={handleSendPlanningContextToAdvisor}
+                handleSubmit={handleSubmit}
+                hasPlanningContext={hasPlanningContext}
+                historyData={historyData}
+                inlineChatInputRef={inlineChatInputRef}
+                loading={loading}
+                mandatoryCheck={mandatoryCheck}
+                newUserForm={newUserForm}
+                openAdvisorPanel={openAdvisorPanel}
+                passwordResetForm={passwordResetForm}
+                planStats={planStats}
+                profileHighlights={profileHighlights}
+                providers={providers}
+                result={result}
+                openUniversityDetail={openUniversityDetail}
+                selectedConstraintLabels={selectedConstraintLabels}
+                selectedInterestLabels={selectedInterestLabels}
+                selectedNeedLabels={selectedNeedLabels}
+                selectedPersonalityLabels={selectedPersonalityLabels}
+                selectedSchoolLabels={selectedSchoolLabels}
+                setChatInput={setChatInput}
+                setNewUserForm={setNewUserForm}
+                setPasswordResetForm={setPasswordResetForm}
+                soulQuestions={soulQuestions}
+                tradeoffPanel={tradeoffPanel}
+                updateField={updateField}
+                toggleSelection={toggleSelection}
+                userList={userList}
+                userManagementLoading={userManagementLoading}
+                userManagementMessage={userManagementMessage}
+                workspaceTab={workspaceTab}
+                setWorkspaceTab={setWorkspaceTab}
+              />
+            ) : null}
 
-        {screen === SCREEN_ADVISOR ? (
-          <AdvisorScreen
-            activeQuickQuestions={activeQuickQuestions}
-            advisorConfig={advisorConfig}
-            advisorContextHighlights={advisorContextHighlights}
-            advisorMode={advisorMode}
-            chatEnabled={chatEnabled}
-            chatInput={chatInput}
-            chatLoading={chatLoading}
-            chatMessages={chatMessages}
-            dataStatus={dataStatus}
-            formState={formState}
-            hasPlanningContext={hasPlanningContext}
-            onAuthClick={goToAuth}
-            onBackToWorkspace={closeAdvisorPanel}
-            onModeChange={handleAdvisorModeChange}
-            onResetSession={handleResetAdvisorSession}
-            onSendChat={handleSendChat}
-            onSendPlanningContext={handleSendPlanningContextToAdvisor}
-            overlayInputRef={overlayChatInputRef}
-            providers={providers}
-            setChatInput={setChatInput}
-            soulQuestions={soulQuestions}
-          />
-        ) : null}
+            {screen === SCREEN_UNIVERSITY ? (
+              <UniversityScreen
+                university={selectedUniversityDetail}
+                onBack={closeUniversityDetail}
+              />
+            ) : null}
+
+            {screen === SCREEN_ADVISOR ? (
+              <AdvisorScreen
+                activeQuickQuestions={activeQuickQuestions}
+                advisorConfig={advisorConfig}
+                advisorContextHighlights={advisorContextHighlights}
+                advisorMode={advisorMode}
+                chatEnabled={chatEnabled}
+                chatInput={chatInput}
+                chatLoading={chatLoading}
+                chatMessages={chatMessages}
+                dataStatus={dataStatus}
+                formState={formState}
+                hasPlanningContext={hasPlanningContext}
+                onAuthClick={goToAuth}
+                onBackToWorkspace={closeAdvisorPanel}
+                onModeChange={handleAdvisorModeChange}
+                onResetSession={handleResetAdvisorSession}
+                onSendChat={handleSendChat}
+                onSendPlanningContext={handleSendPlanningContextToAdvisor}
+                overlayInputRef={overlayChatInputRef}
+                providers={providers}
+                setChatInput={setChatInput}
+                soulQuestions={soulQuestions}
+              />
+            ) : null}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </Suspense>
   );

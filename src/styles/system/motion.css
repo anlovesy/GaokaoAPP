@@ -1,0 +1,122 @@
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: clip;
+}
+
+.app-screen-stage {
+  will-change: opacity, transform, filter;
+}
+
+.workspace-premium-head,
+.advisor-premium-head,
+.university-premium-head,
+.landing-theater,
+.auth-shell,
+.workspace-shell-stage,
+.advisor-experience-shell,
+.university-dossier-hero {
+  transition:
+    transform 260ms ease,
+    box-shadow 260ms ease,
+    border-color 260ms ease,
+    background-color 260ms ease;
+}
+
+.workspace-premium-head:hover,
+.advisor-premium-head:hover,
+.university-premium-head:hover,
+.landing-theater:hover,
+.auth-shell:hover,
+.workspace-shell-stage:hover,
+.advisor-experience-shell:hover,
+.university-dossier-hero:hover {
+  transform: translateY(-2px);
+}
+
+.chat-message-card,
+.workspace-summary-chip,
+.advisor-summary-chip,
+.university-summary-chip,
+.workspace-editorial-block,
+.workspace-tradeoff-callout,
+.workspace-insight-note,
+.university-dossier-card,
+.advisor-context-minimal article {
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    border-color 220ms ease,
+    background-color 220ms ease;
+}
+
+.chat-message-card:hover,
+.workspace-summary-chip:hover,
+.advisor-summary-chip:hover,
+.university-summary-chip:hover,
+.workspace-editorial-block:hover,
+.workspace-tradeoff-callout:hover,
+.workspace-insight-note:hover,
+.university-dossier-card:hover,
+.advisor-context-minimal article:hover {
+  transform: translateY(-2px);
+}
+
+@keyframes typingPulse {
+  0%,
+  80%,
+  100% {
+    transform: scale(0.72);
+    opacity: 0.42;
+  }
+
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes marqueeForward {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(calc(-50% - 8px));
+  }
+}
+
+@keyframes marqueeReverse {
+  from {
+    transform: translateX(calc(-50% - 8px));
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+}

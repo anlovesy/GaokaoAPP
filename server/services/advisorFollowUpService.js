@@ -9,7 +9,9 @@ export function buildDynamicAdvisorFollowUpReply({
     return "";
   }
 
-  const normalized = String(currentUserMessage || "").replace(/\s+/g, "").toLowerCase();
+  const normalized = String(currentUserMessage || "")
+    .replace(/\s+/g, "")
+    .toLowerCase();
   if (!normalized) {
     return "";
   }
@@ -71,7 +73,10 @@ function inferAdvisorTopicFromConversation({
     return "major";
   }
 
-  if (/(保底|滑档|兜底|安全|稳不稳|录取率|概率)/.test(currentUserMessage) || /(保底|滑档|兜底)/.test(previous)) {
+  if (
+    /(保底|滑档|兜底|安全|稳不稳|录取率|概率)/.test(currentUserMessage) ||
+    /(保底|滑档|兜底)/.test(previous)
+  ) {
     return "safe";
   }
 
@@ -83,7 +88,10 @@ function inferAdvisorTopicFromConversation({
     return "steady";
   }
 
-  if (/(专业|专业组|调剂|选科|限制)/.test(currentUserMessage) || /(专业组|调剂|选科)/.test(previous)) {
+  if (
+    /(专业|专业组|调剂|选科|限制)/.test(currentUserMessage) ||
+    /(专业组|调剂|选科)/.test(previous)
+  ) {
     return "major";
   }
 

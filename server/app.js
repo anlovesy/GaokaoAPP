@@ -44,7 +44,7 @@ app.use(express.json({ limit: "1mb" }));
 const requestSchema = z.object({
   province: z.string().min(1),
   examMode: z.string().min(1).default("3+1+2"),
-  track: z.enum(["鍘嗗彶", "鐗╃悊"]).default("鐗╃悊"),
+  track: z.enum(["物理", "历史"]).default("物理"),
   selectedSubjects: z.array(z.string()).default([]),
   score: z.number().min(0).max(750),
   rank: z.number().int().min(1),
@@ -122,7 +122,7 @@ app.post("/api/auth/login", (request, response) => {
     if (!auth) {
       response.status(401).json({
         ok: false,
-        error: "鐢ㄦ埛鍚嶆垨瀵嗙爜閿欒"
+        error: "用户名或密码错误"
       });
       return;
     }
@@ -134,7 +134,7 @@ app.post("/api/auth/login", (request, response) => {
   } catch (error) {
     response.status(400).json({
       ok: false,
-      error: error instanceof Error ? error.message : "鐧诲綍澶辫触"
+      error: error instanceof Error ? error.message : "登录请求无效"
     });
   }
 });
@@ -259,7 +259,7 @@ app.post("/api/admin/users", (request, response) => {
   } catch (error) {
     response.status(400).json({
       ok: false,
-      error: error instanceof Error ? error.message : "鍒涘缓鐢ㄦ埛澶辫触"
+      error: error instanceof Error ? error.message : "创建用户失败"
     });
   }
 });
@@ -284,7 +284,7 @@ app.patch("/api/admin/users/:id/password", (request, response) => {
   } catch (error) {
     response.status(400).json({
       ok: false,
-      error: error instanceof Error ? error.message : "閲嶇疆瀵嗙爜澶辫触"
+      error: error instanceof Error ? error.message : "重置密码失败"
     });
   }
 });
@@ -300,7 +300,7 @@ app.patch("/api/admin/users/:id/role", (request, response) => {
     const payload = updateRoleSchema.parse(request.body);
 
     if (targetUserId === user.id && payload.role !== "admin") {
-      throw new Error("褰撳墠绠＄悊鍛樹笉鑳藉彇娑堣嚜宸辩殑绠＄悊鍛樻潈闄?);
+      throw new Error("当前管理员不能取消自己的管理员权限");
     }
 
     const updatedUser = updateUserRole(targetUserId, payload.role);
@@ -314,7 +314,7 @@ app.patch("/api/admin/users/:id/role", (request, response) => {
   } catch (error) {
     response.status(400).json({
       ok: false,
-      error: error instanceof Error ? error.message : "鏇存柊瑙掕壊澶辫触"
+      error: error instanceof Error ? error.message : "更新用户角色失败"
     });
   }
 });
@@ -328,7 +328,7 @@ app.delete("/api/admin/users/:id", (request, response) => {
   try {
     const targetUserId = parseUserId(request.params.id);
     if (targetUserId === user.id) {
-      throw new Error("涓嶈兘鍒犻櫎褰撳墠鐧诲綍璐﹀彿");
+      throw new Error("管理员不能删除当前登录账号");
     }
 
     deleteUser(targetUserId);
@@ -336,7 +336,7 @@ app.delete("/api/admin/users/:id", (request, response) => {
   } catch (error) {
     response.status(400).json({
       ok: false,
-      error: error instanceof Error ? error.message : "鍒犻櫎鐢ㄦ埛澶辫触"
+      error: error instanceof Error ? error.message : "删除用户失败"
     });
   }
 });
@@ -376,7 +376,7 @@ app.post("/api/planner/recommend", async (request, response) => {
   } catch (error) {
     response.status(400).json({
       ok: false,
-      error: error instanceof Error ? error.message : "鐢熸垚蹇楁効鏂规澶辫触"
+      error: error instanceof Error ? error.message : "生成志愿方案失败"
     });
   }
 });
@@ -436,7 +436,7 @@ app.post("/api/chat/advisor", async (request, response) => {
   } catch (error) {
     response.status(400).json({
       ok: false,
-      error: error instanceof Error ? error.message : "鑱婂ぉ椤鹃棶鍥炲澶辫触"
+      error: error instanceof Error ? error.message : "顾问对话失败"
     });
   }
 });
@@ -475,7 +475,7 @@ app.post("/api/admin/upload", (request, response) => {
   } catch (error) {
     response.status(400).json({
       ok: false,
-      error: error instanceof Error ? error.message : "涓婁紶瀵煎叆澶辫触"
+      error: error instanceof Error ? error.message : "导入数据失败"
     });
   }
 });
@@ -495,7 +495,7 @@ if (fs.existsSync(distDir)) {
   app.get("/", (_request, response) => {
     response
       .status(200)
-      .send("鍓嶇灏氭湭鏋勫缓銆傝鍏堣繍琛?`npm run build`锛岀劧鍚庤闂?http://localhost:3001銆?);
+      .send("前端静态资源尚未构建，请先执行 npm.cmd run build，然后访问 http://localhost:3001。");
   });
 }
 
@@ -506,7 +506,7 @@ export function createServer() {
 function parseUserId(value) {
   const userId = Number(value);
   if (!Number.isInteger(userId) || userId <= 0) {
-    throw new Error("鏃犳晥鐨勭敤鎴风紪鍙?);
+    throw new Error("无效的用户 ID");
   }
 
   return userId;
@@ -536,7 +536,7 @@ function resolveUsageAccess(request, actionType = "planner") {
     return {
       allowed: false,
       trialToken,
-      message: "娓稿妯″紡鍙紑鏀句竴娆℃寮忓織鎰胯〃浣撻獙銆傝繛缁?AI 椤鹃棶銆佷笂涓嬫枃璁板繂鍜屽巻鍙茶褰曢渶瑕佺櫥褰曞悗浣跨敤銆?
+      message: "游客模式不开放连续对话、聊天记忆和上下文顾问能力，请登录后继续使用 AI 顾问。"
     };
   }
 
@@ -544,7 +544,7 @@ function resolveUsageAccess(request, actionType = "planner") {
     return {
       allowed: false,
       trialToken: "",
-      message: "鏈櫥褰曠敤鎴烽渶瑕佸厛棰嗗彇涓€娆℃父瀹㈣瘯鐢ㄦ爣璇嗗悗鎵嶈兘浣撻獙銆傝鍒锋柊椤甸潰鍚庨噸璇曘€?
+      message: "游客凭证缺失，请返回首页重新进入游客体验，或直接登录正式账号继续使用。"
     };
   }
 
@@ -553,7 +553,7 @@ function resolveUsageAccess(request, actionType = "planner") {
     return {
       allowed: false,
       trialToken,
-      message: "娓稿妯″紡浠呭彲瀹屾垚涓€娆℃寮忓織鎰胯〃浣撻獙銆傝鐧诲綍璐﹀彿鍚庣户缁棤闄愪娇鐢ㄣ€?
+      message: "游客模式仅开放一次正式志愿方案体验，本次试用次数已用完，请登录后继续使用。"
     };
   }
 
@@ -583,7 +583,7 @@ function getTrialToken(request) {
 function requireAuthUser(request, response) {
   const user = getUserFromRequest(request);
   if (!user) {
-    response.status(401).json({ ok: false, error: "鏈櫥褰? });
+    response.status(401).json({ ok: false, error: "未登录或登录已失效" });
     return null;
   }
 
@@ -597,7 +597,7 @@ function requireAdminUser(request, response) {
   }
 
   if (!isAdmin(user)) {
-    response.status(403).json({ ok: false, error: "闇€瑕佺鐞嗗憳鏉冮檺" });
+    response.status(403).json({ ok: false, error: "当前账号没有管理员权限" });
     return null;
   }
 

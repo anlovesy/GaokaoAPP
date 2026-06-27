@@ -1,0 +1,9 @@
+@import "./system/tokens.css";
+@import "./system/base.css";
+@import "./system/motion.css";
+@import "./system/legacy-layout.css";
+@import "./pages/advisor.css";
+@import "./pages/auth.css";
+@import "./pages/landing.css";
+@import "./pages/university.css";
+@import "./pages/workspace.css";

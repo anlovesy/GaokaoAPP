@@ -45,11 +45,7 @@ export function getDataStatus() {
 
 export function getLatestProvinceYear(data, province, track) {
   const candidates = data.provinceScoreRank
-    .filter(
-      (item) =>
-        item.province === province &&
-        (!track || !item.track || item.track === track)
-    )
+    .filter((item) => item.province === province && (!track || !item.track || item.track === track))
     .map((item) => Number(item.year))
     .filter(Boolean);
 
@@ -58,11 +54,7 @@ export function getLatestProvinceYear(data, province, track) {
 
 export function getLatestUniversityYear(data, province, track) {
   const candidates = data.universityMajorLines
-    .filter(
-      (item) =>
-        item.province === province &&
-        (!track || !item.track || item.track === track)
-    )
+    .filter((item) => item.province === province && (!track || !item.track || item.track === track))
     .map((item) => Number(item.year))
     .filter(Boolean);
 
@@ -91,24 +83,27 @@ export function findNearbyScoreRank(data, province, track, score) {
     return exact;
   }
 
-  return scopedRows
-    .slice()
-    .sort((a, b) => Math.abs(Number(a.score) - Number(score)) - Math.abs(Number(b.score) - Number(score)))[0] || null;
+  return (
+    scopedRows
+      .slice()
+      .sort(
+        (a, b) =>
+          Math.abs(Number(a.score) - Number(score)) - Math.abs(Number(b.score) - Number(score))
+      )[0] || null
+  );
 }
 
 export function findHistoricalMajorLine(data, province, track, university, major) {
-  const scopedMatches = data.universityMajorLines
-    .filter(
-      (item) =>
-        item.province === province &&
-        item.university === university &&
-        (!track || !item.track || item.track === track)
-    );
+  const scopedMatches = data.universityMajorLines.filter(
+    (item) =>
+      item.province === province &&
+      item.university === university &&
+      (!track || !item.track || item.track === track)
+  );
 
   const majorMatches = scopedMatches
     .filter(
-      (item) =>
-        (item.major === major || item.major.includes(major) || major.includes(item.major))
+      (item) => item.major === major || item.major.includes(major) || major.includes(item.major)
     )
     .sort((a, b) => b.year - a.year);
 
@@ -116,15 +111,13 @@ export function findHistoricalMajorLine(data, province, track, university, major
     return majorMatches[0];
   }
 
-  const fallbackMatches = scopedMatches
-    .slice()
-    .sort((a, b) => {
-      if (b.year !== a.year) {
-        return b.year - a.year;
-      }
+  const fallbackMatches = scopedMatches.slice().sort((a, b) => {
+    if (b.year !== a.year) {
+      return b.year - a.year;
+    }
 
-      return a.minRank - b.minRank;
-    });
+    return a.minRank - b.minRank;
+  });
 
   return fallbackMatches[0] || null;
 }

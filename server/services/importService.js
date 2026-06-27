@@ -117,7 +117,11 @@ export function importAllCsvFiles() {
   }
 
   fs.writeFileSync(provinceScoreRankOutput, JSON.stringify(provinceScoreRank, null, 2), "utf8");
-  fs.writeFileSync(universityMajorLinesOutput, JSON.stringify(universityMajorLines, null, 2), "utf8");
+  fs.writeFileSync(
+    universityMajorLinesOutput,
+    JSON.stringify(universityMajorLines, null, 2),
+    "utf8"
+  );
 
   return {
     provinceScoreRankCount: provinceScoreRank.length,

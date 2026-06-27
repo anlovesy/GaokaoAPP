@@ -26,9 +26,9 @@ function splitCsvLine(line) {
   for (let index = 0; index < line.length; index += 1) {
     const char = line[index];
 
-    if (char === "\"") {
-      if (inQuotes && line[index + 1] === "\"") {
-        current += "\"";
+    if (char === '"') {
+      if (inQuotes && line[index + 1] === '"') {
+        current += '"';
         index += 1;
       } else {
         inQuotes = !inQuotes;

@@ -1,32 +1,36 @@
+import { motion } from "framer-motion";
 import { UniversityDetailPanel } from "../../components/university/UniversityDetailPanel.jsx";
 
 export function UniversityScreen({ university, onBack }) {
   return (
-    <div className="university-page-shell">
+    <div className="university-page-shell brand-shell">
       <div className="university-page-layout">
-        <header className="university-page-topbar surface-card">
-          <div>
-            <p className="eyebrow">University Archive</p>
-            <h1>{university ? `${university.university} · 高校详情` : "高校详情页"}</h1>
-            <p className="workspace-subtitle">
-              {university
-                ? "这里把学校简介、推荐专业、历届招生情况、分数参考、学费和官方入口集中到一个页面里，方便你围绕单所学校做深入判断。"
-                : "请先从志愿推荐页点击学校图片，再进入这张高校详情页查看具体资料。"}
-            </p>
+        <motion.header
+          className="university-premium-head"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45 }}
+        >
+          <div className="university-head-copy">
+            <span className="brand-kicker">UNIVERSITY DOSSIER</span>
+            <h1>{university ? university.university : "高校详情"}</h1>
+            <p>{university ? "围绕一所学校继续判断。" : "请先从志愿方案里选择一所学校。"}</p>
           </div>
-          <div className="topbar-actions">
-            <button className="ghost-btn" type="button" onClick={onBack}>
-              返回志愿推荐
+
+          <div className="university-head-actions">
+            <button className="text-link-btn" type="button" onClick={onBack}>
+              返回工作台
             </button>
           </div>
-        </header>
+        </motion.header>
 
         {university ? (
           <UniversityDetailPanel university={university} isStandalone />
         ) : (
-          <article className="surface-card info-card">
-            <h4>还没有选中高校</h4>
-            <p>请先从志愿推荐页点击学校图片，再进入这张高校详情页查看具体资料。</p>
+          <article className="university-empty-state">
+            <span className="brand-kicker">EMPTY</span>
+            <h3>还没有选中学校</h3>
+            <p>回到方案页后，再进入院校详情继续查看。</p>
           </article>
         )}
       </div>

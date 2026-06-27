@@ -296,7 +296,12 @@ export const universityCatalog = [
     baseRank: 2400,
     majors: [
       { name: "软件工程", direction: "软件工程", offset: 180, popularity: "hot" },
-      { name: "电气工程及其自动化", direction: "电气工程及其自动化", offset: 300, popularity: "stable" },
+      {
+        name: "电气工程及其自动化",
+        direction: "电气工程及其自动化",
+        offset: 300,
+        popularity: "stable"
+      },
       { name: "环境工程", direction: "环境工程", offset: 880, popularity: "stable" }
     ]
   },
@@ -375,7 +380,12 @@ export const universityCatalog = [
     employmentStability: 88,
     baseRank: 8300,
     majors: [
-      { name: "电气工程及其自动化", direction: "电气工程及其自动化", offset: 220, popularity: "stable" },
+      {
+        name: "电气工程及其自动化",
+        direction: "电气工程及其自动化",
+        offset: 220,
+        popularity: "stable"
+      },
       { name: "人工智能", direction: "人工智能", offset: 420, popularity: "hot" },
       { name: "临床医学", direction: "临床医学", offset: 560, popularity: "hot" }
     ]
@@ -504,7 +514,12 @@ export const universityCatalog = [
     baseRank: 17500,
     majors: [
       { name: "机械工程", direction: "机械工程", offset: 0, popularity: "stable" },
-      { name: "电气工程及其自动化", direction: "电气工程及其自动化", offset: 260, popularity: "stable" },
+      {
+        name: "电气工程及其自动化",
+        direction: "电气工程及其自动化",
+        offset: 260,
+        popularity: "stable"
+      },
       { name: "人工智能", direction: "人工智能", offset: 720, popularity: "hot" }
     ]
   },
@@ -617,7 +632,12 @@ export const universityCatalog = [
     majors: [
       { name: "软件工程", direction: "软件工程", offset: 0, popularity: "hot" },
       { name: "人工智能", direction: "人工智能", offset: 180, popularity: "hot" },
-      { name: "电气工程及其自动化", direction: "电气工程及其自动化", offset: 760, popularity: "stable" }
+      {
+        name: "电气工程及其自动化",
+        direction: "电气工程及其自动化",
+        offset: 760,
+        popularity: "stable"
+      }
     ]
   },
   {
@@ -679,7 +699,12 @@ export const universityCatalog = [
     employmentStability: 82,
     baseRank: 51200,
     majors: [
-      { name: "电气工程及其自动化", direction: "电气工程及其自动化", offset: 0, popularity: "stable" },
+      {
+        name: "电气工程及其自动化",
+        direction: "电气工程及其自动化",
+        offset: 0,
+        popularity: "stable"
+      },
       { name: "自动化", direction: "自动化", offset: 260, popularity: "stable" },
       { name: "计算机科学与技术", direction: "计算机科学与技术", offset: 580, popularity: "hot" }
     ]
@@ -727,7 +752,12 @@ export const universityCatalog = [
     employmentStability: 82,
     baseRank: 44600,
     majors: [
-      { name: "数据科学与大数据技术", direction: "数据科学与大数据技术", offset: 220, popularity: "hot" },
+      {
+        name: "数据科学与大数据技术",
+        direction: "数据科学与大数据技术",
+        offset: 220,
+        popularity: "hot"
+      },
       { name: "软件工程", direction: "软件工程", offset: 440, popularity: "hot" },
       { name: "环境工程", direction: "环境工程", offset: 920, popularity: "stable" }
     ]

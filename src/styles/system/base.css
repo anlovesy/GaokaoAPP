@@ -1,0 +1,177 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html[data-scroll-mode="lenis"] {
+  scroll-behavior: auto;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  font-family: var(--font-body);
+  background:
+    radial-gradient(circle at 15% 12%, rgba(29, 106, 129, 0.14), transparent 20%),
+    radial-gradient(circle at 82% 10%, rgba(255, 107, 74, 0.1), transparent 16%),
+    radial-gradient(circle at 50% 120%, rgba(14, 58, 76, 0.1), transparent 28%),
+    linear-gradient(180deg, #f9fbfc 0%, #f2f5f7 50%, #e9eef1 100%);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.22) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent 88%);
+  opacity: 0.45;
+}
+
+::selection {
+  background: rgba(29, 106, 129, 0.16);
+  color: var(--brand);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button,
+input,
+select,
+textarea,
+a {
+  transition:
+    transform 180ms ease,
+    opacity 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.88),
+    0 0 0 5px rgba(29, 106, 129, 0.2);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+p {
+  margin: 0;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.05em;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: clamp(3.6rem, 9vw, 8rem);
+  line-height: 0.9;
+}
+
+h2 {
+  font-size: clamp(2.1rem, 5vw, 4.4rem);
+  line-height: 0.94;
+}
+
+h3 {
+  font-size: clamp(1.4rem, 3vw, 2.3rem);
+  line-height: 1;
+}
+
+h4 {
+  font-size: 1.12rem;
+}
+
+p {
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.app-experience-shell {
+  position: relative;
+  overflow: clip;
+}
+
+.app-screen-stage {
+  position: relative;
+  z-index: 1;
+}
+
+.app-experience-orb {
+  position: fixed;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(18px);
+  opacity: 0.72;
+}
+
+.app-experience-orb.orb-a {
+  top: -8%;
+  left: -10%;
+  background: radial-gradient(circle, rgba(29, 106, 129, 0.14), transparent 68%);
+}
+
+.app-experience-orb.orb-b {
+  right: -8%;
+  bottom: -10%;
+  background: radial-gradient(circle, rgba(255, 107, 74, 0.12), transparent 68%);
+}
+
+.magnetic-btn:hover {
+  transform: translateY(-2px) scale(1.01);
+}
+
+.surface-card:hover,
+.premium-glass:hover,
+.workspace-stage-hero:hover,
+.workspace-stage-section:hover,
+.workspace-tier-band:hover,
+.workspace-focus-school:hover,
+.advisor-experience-panel:hover,
+.university-dossier-card:hover,
+.university-dossier-hero:hover {
+  box-shadow: 0 24px 56px rgba(13, 32, 42, 0.1);
+}

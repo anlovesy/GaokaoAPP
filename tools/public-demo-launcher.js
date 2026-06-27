@@ -13,7 +13,10 @@ const serverPidPath = path.join(toolsDir, "project-server-public.pid");
 const tunnelPidPath = path.join(toolsDir, "cloudflared-public.pid");
 const activeTunnelLogPathFile = path.join(toolsDir, "cloudflared-public-active-log.txt");
 const activeServerLogPathFile = path.join(toolsDir, "project-server-public-active-log.txt");
-const activeServerErrorLogPathFile = path.join(toolsDir, "project-server-public-active-error-log.txt");
+const activeServerErrorLogPathFile = path.join(
+  toolsDir,
+  "project-server-public-active-error-log.txt"
+);
 const publicUrlFile = path.join(toolsDir, "public-demo-url.txt");
 const cloudflaredPath = path.join(toolsDir, "cloudflared.exe");
 const port = 3011;

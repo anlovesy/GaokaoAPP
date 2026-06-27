@@ -88,13 +88,15 @@ export function getUsageStatsForIdentity({ userId, trialToken }) {
     : 0;
   const chatCount = userId
     ? Number(
-        db.prepare("SELECT COUNT(*) AS total FROM chat_history WHERE user_id = ?").get(userId)?.total || 0
+        db.prepare("SELECT COUNT(*) AS total FROM chat_history WHERE user_id = ?").get(userId)
+          ?.total || 0
       )
     : 0;
 
   const trialUsageCount = trialToken
     ? Number(
-        db.prepare("SELECT COUNT(*) AS total FROM trial_usage WHERE trial_token = ?")
+        db
+          .prepare("SELECT COUNT(*) AS total FROM trial_usage WHERE trial_token = ?")
           .get(trialToken)?.total || 0
       )
     : 0;
@@ -111,19 +113,23 @@ export function registerTrialUsage({ trialToken, actionType }) {
     return;
   }
 
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO trial_usage (trial_token, action_type, created_at)
     VALUES (?, ?, ?)
-  `).run(trialToken, actionType, new Date().toISOString());
+  `
+  ).run(trialToken, actionType, new Date().toISOString());
 }
 
 export function authenticateUser(username, password) {
   const user = db
-    .prepare(`
+    .prepare(
+      `
       SELECT id, username, role, password_hash, created_at, last_login_at
       FROM users
       WHERE username = ?
-    `)
+    `
+    )
     .get(username);
 
   if (!user || !verifyPassword(password, user.password_hash)) {
@@ -133,8 +139,11 @@ export function authenticateUser(username, password) {
   const lastLoginAt = new Date().toISOString();
   const token = crypto.randomUUID();
   db.prepare("UPDATE users SET last_login_at = ? WHERE id = ?").run(lastLoginAt, user.id);
-  db.prepare("INSERT INTO auth_tokens (token, user_id, created_at) VALUES (?, ?, ?)")
-    .run(token, user.id, new Date().toISOString());
+  db.prepare("INSERT INTO auth_tokens (token, user_id, created_at) VALUES (?, ?, ?)").run(
+    token,
+    user.id,
+    new Date().toISOString()
+  );
 
   return {
     token,
@@ -159,13 +168,15 @@ export function getUserFromToken(token) {
   }
 
   const record = db
-    .prepare(`
+    .prepare(
+      `
       SELECT users.id, users.username, users.role, users.created_at
         , users.last_login_at
       FROM auth_tokens
       JOIN users ON users.id = auth_tokens.user_id
       WHERE auth_tokens.token = ?
-    `)
+    `
+    )
     .get(token);
 
   return record ? normalizeUser(record) : null;
@@ -173,14 +184,16 @@ export function getUserFromToken(token) {
 
 export function listUsers() {
   return db
-    .prepare(`
+    .prepare(
+      `
       SELECT id, username, role, created_at
         , last_login_at
       FROM users
       ORDER BY
         CASE WHEN role = 'admin' THEN 0 ELSE 1 END,
         id ASC
-    `)
+    `
+    )
     .all()
     .map((user) => ({
       ...normalizeUser(user),
@@ -196,10 +209,12 @@ export function createUser({ username, password, role = "advisor" }) {
     throw new Error("该用户名已存在");
   }
 
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO users (username, role, password_hash, created_at)
     VALUES (?, ?, ?, ?)
-  `).run(username, role, hashPassword(password), new Date().toISOString());
+  `
+  ).run(username, role, hashPassword(password), new Date().toISOString());
 
   return getUserByUsername(username);
 }
@@ -210,8 +225,7 @@ export function updateUserPassword(userId, password) {
     throw new Error("用户不存在");
   }
 
-  db.prepare("UPDATE users SET password_hash = ? WHERE id = ?")
-    .run(hashPassword(password), userId);
+  db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(hashPassword(password), userId);
 
   db.prepare("DELETE FROM auth_tokens WHERE user_id = ?").run(userId);
 
@@ -252,10 +266,12 @@ export function deleteUser(userId) {
 }
 
 export function savePlanHistory({ userId, profile, result }) {
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO plans (user_id, province, score, rank_value, ai_provider, result_json, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(
+  `
+  ).run(
     userId || null,
     profile.province,
     profile.score,
@@ -267,10 +283,12 @@ export function savePlanHistory({ userId, profile, result }) {
 }
 
 export function saveChatHistory({ userId, provider, messages, replyText }) {
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO chat_history (user_id, session_id, provider, messages_json, reply_text, created_at)
     VALUES (?, ?, ?, ?, ?, ?)
-  `).run(
+  `
+  ).run(
     userId || null,
     null,
     provider,
@@ -281,10 +299,12 @@ export function saveChatHistory({ userId, provider, messages, replyText }) {
 }
 
 export function saveChatSessionHistory({ userId, sessionId, provider, messages, replyText }) {
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO chat_history (user_id, session_id, provider, messages_json, reply_text, created_at)
     VALUES (?, ?, ?, ?, ?, ?)
-  `).run(
+  `
+  ).run(
     userId || null,
     sessionId || null,
     provider,
@@ -303,33 +323,39 @@ export function getLatestChatSession({ userId, sessionId, isAdmin = false }) {
 
   if (isAdmin) {
     row = db
-      .prepare(`
+      .prepare(
+        `
         SELECT id, session_id, provider, messages_json, reply_text, created_at
         FROM chat_history
         WHERE session_id = ?
         ORDER BY id DESC
         LIMIT 1
-      `)
+      `
+      )
       .get(sessionId);
   } else if (userId) {
     row = db
-      .prepare(`
+      .prepare(
+        `
         SELECT id, session_id, provider, messages_json, reply_text, created_at
         FROM chat_history
         WHERE session_id = ? AND user_id = ?
         ORDER BY id DESC
         LIMIT 1
-      `)
+      `
+      )
       .get(sessionId, userId);
   } else {
     row = db
-      .prepare(`
+      .prepare(
+        `
         SELECT id, session_id, provider, messages_json, reply_text, created_at
         FROM chat_history
         WHERE session_id = ? AND user_id IS NULL
         ORDER BY id DESC
         LIMIT 1
-      `)
+      `
+      )
       .get(sessionId);
   }
 
@@ -348,10 +374,12 @@ export function getLatestChatSession({ userId, sessionId, isAdmin = false }) {
 }
 
 export function saveImportHistory({ userId, datasetType, fileName, rowCount }) {
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO imports (user_id, dataset_type, file_name, row_count, created_at)
     VALUES (?, ?, ?, ?, ?)
-  `).run(userId || null, datasetType, fileName, rowCount, new Date().toISOString());
+  `
+  ).run(userId || null, datasetType, fileName, rowCount, new Date().toISOString());
 }
 
 export function getPlanHistory({ limit = 20, userId, isAdmin = false } = {}) {
@@ -417,7 +445,9 @@ function runHistoryQuery({ table, columns, mapper, limit, userId, isAdmin }) {
 
   const rows = isAdmin
     ? db.prepare(`${baseSql} ORDER BY id DESC LIMIT ?`).all(safeLimit)
-    : db.prepare(`${baseSql} WHERE user_id = ? ORDER BY id DESC LIMIT ?`).all(userId || 0, safeLimit);
+    : db
+        .prepare(`${baseSql} WHERE user_id = ? ORDER BY id DESC LIMIT ?`)
+        .all(userId || 0, safeLimit);
 
   return rows.map(mapper);
 }
@@ -463,16 +493,20 @@ function ensureDefaultAdmin() {
   const passwordHash = hashPassword(password);
 
   if (!existing) {
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO users (username, role, password_hash, created_at)
       VALUES (?, 'admin', ?, ?)
-    `).run(username, passwordHash, new Date().toISOString());
+    `
+    ).run(username, passwordHash, new Date().toISOString());
     return;
   }
 
   if (existing.password_hash !== passwordHash || existing.role !== "admin") {
-    db.prepare("UPDATE users SET password_hash = ?, role = 'admin' WHERE id = ?")
-      .run(passwordHash, existing.id);
+    db.prepare("UPDATE users SET password_hash = ?, role = 'admin' WHERE id = ?").run(
+      passwordHash,
+      existing.id
+    );
   }
 }
 

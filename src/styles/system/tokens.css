@@ -1,0 +1,38 @@
+:root {
+  --bg: #f4f6f8;
+  --bg-deep: #dce3e8;
+  --panel: rgba(255, 255, 255, 0.72);
+  --panel-strong: rgba(255, 255, 255, 0.9);
+  --line: rgba(10, 32, 43, 0.12);
+  --line-strong: rgba(10, 32, 43, 0.22);
+  --text: #102731;
+  --muted: rgba(16, 39, 49, 0.62);
+  --brand: #0e3a4c;
+  --brand-2: #1d6a81;
+  --accent: #ff6b4a;
+  --accent-soft: rgba(255, 107, 74, 0.18);
+  --ok: #1c7f5a;
+  --warn: #b9791f;
+  --shadow-lg: 0 38px 90px rgba(13, 32, 42, 0.14);
+  --shadow-md: 0 24px 56px rgba(13, 32, 42, 0.1);
+  --shadow-sm: 0 18px 36px rgba(13, 32, 42, 0.08);
+  --radius-xl: 32px;
+  --radius-lg: 24px;
+  --radius-md: 18px;
+  --font-display:
+    "SF Pro Display", "Inter", "Plus Jakarta Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-body: "SF Pro Text", "Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", "Consolas", monospace;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-9: 40px;
+  --space-10: 48px;
+  --blur-soft: 16px;
+  --blur-strong: 20px;
+}
