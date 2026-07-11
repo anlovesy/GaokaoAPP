@@ -1,0 +1,522 @@
+.university-page-shell,
+.university-page-layout {
+  display: grid;
+  gap: 12px;
+}
+
+.university-page-shell.brand-shell {
+  padding: 18px;
+}
+
+.university-page-layout {
+  width: min(1520px, 100%);
+  margin: 0 auto;
+}
+
+.university-minimal-head {
+  min-height: 148px;
+  padding: 22px 28px;
+  border-radius: 28px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.university-minimal-head h1 {
+  font-size: clamp(2.35rem, 4vw, 4.65rem);
+  font-weight: 690;
+  line-height: 0.96;
+  letter-spacing: -0.06em;
+}
+
+.university-minimal-head p {
+  max-width: 30ch;
+  margin-top: 8px;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.university-head-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.university-empty-state {
+  min-height: 248px;
+  padding: 24px 28px;
+  border-radius: 28px;
+  display: grid;
+  grid-template-columns: 128px minmax(0, 1fr);
+  align-items: center;
+  gap: 22px;
+}
+
+.university-empty-state .brand-kicker {
+  grid-column: 1 / -1;
+  margin-bottom: -10px;
+}
+
+.university-empty-state h3 {
+  grid-column: 2;
+  font-size: clamp(1.65rem, 2.6vw, 2.85rem);
+  font-weight: 680;
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.university-empty-state p {
+  grid-column: 2;
+  max-width: 44ch;
+  margin-top: 8px;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.university-empty-orbit.workspace-empty-orbit {
+  position: relative;
+  grid-row: 2 / span 2;
+  width: 118px;
+  height: 118px;
+  margin: 0;
+}
+
+.university-empty-orbit .workspace-empty-orbit-ring,
+.university-empty-orbit .workspace-empty-orbit-core {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.university-empty-orbit .workspace-empty-orbit-ring {
+  border: 1px solid rgba(29, 106, 129, 0.16);
+}
+
+.university-empty-orbit .workspace-empty-orbit-ring-a {
+  inset: 0;
+  animation: universityOrbitSpin 18s linear infinite;
+}
+
+.university-empty-orbit .workspace-empty-orbit-ring-b {
+  inset: 24px;
+  animation: universityOrbitSpinReverse 13s linear infinite;
+}
+
+.university-empty-orbit .workspace-empty-orbit-core {
+  inset: 34px;
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.98), transparent 28%),
+    linear-gradient(145deg, #9fd7e3, #5c8190 58%, #234d63);
+  box-shadow:
+    0 28px 72px rgba(47, 77, 104, 0.22),
+    0 0 0 16px rgba(29, 106, 129, 0.05);
+}
+
+.university-dossier {
+  display: grid;
+  gap: 18px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.university-dossier-hero {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(420px, 1.02fr) minmax(0, 0.98fr);
+  gap: 16px;
+  min-height: 420px;
+  padding: 16px;
+  border-radius: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(246, 249, 251, 0.76)),
+    radial-gradient(circle at top right, rgba(29, 106, 129, 0.08), transparent 28%);
+  box-shadow:
+    0 30px 74px rgba(47, 66, 114, 0.11),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+.university-dossier-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 82% 16%, rgba(120, 132, 255, 0.1), transparent 22%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 20%);
+  pointer-events: none;
+}
+
+.university-dossier-media {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  min-height: 388px;
+  box-shadow: 0 28px 70px rgba(13, 32, 42, 0.16);
+}
+
+.university-dossier-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(9, 33, 44, 0.1), rgba(9, 33, 44, 0.44)),
+    radial-gradient(circle at 22% 18%, rgba(255, 255, 255, 0.08), transparent 24%);
+}
+
+.university-dossier-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 388px;
+  object-fit: cover;
+  filter: saturate(0.72) contrast(1.08) brightness(1.02) hue-rotate(-8deg);
+}
+
+.university-dossier-hero-copy {
+  display: grid;
+  align-content: end;
+  gap: 14px;
+  padding: 18px 14px 18px 6px;
+}
+
+.university-editorial-copy {
+  display: grid;
+  gap: 12px;
+}
+
+.university-editorial-copy h3 {
+  max-width: 8.5ch;
+  color: var(--brand);
+  font-family: var(--font-display);
+  font-size: clamp(2.65rem, 4.05vw, 4.9rem);
+  font-weight: 700;
+  line-height: 0.94;
+  letter-spacing: -0.065em;
+}
+
+.university-editorial-copy p {
+  max-width: 34ch;
+  color: rgba(16, 39, 49, 0.54);
+  font-size: 0.84rem;
+  line-height: 1.52;
+}
+
+.university-dossier-overview {
+  max-width: 42ch;
+  color: rgba(16, 39, 49, 0.66);
+  font-size: 0.88rem;
+  line-height: 1.72;
+}
+
+.university-summary-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.university-dossier-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1.24fr) minmax(300px, 0.76fr);
+}
+
+.university-dossier-signal-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(300px, 0.82fr) minmax(0, 1.18fr);
+}
+
+.university-dossier-card {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 15px;
+  padding: 22px;
+  border-radius: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(246, 249, 251, 0.74)),
+    radial-gradient(circle at top right, rgba(29, 106, 129, 0.06), transparent 28%);
+  box-shadow:
+    0 18px 42px rgba(47, 66, 114, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.74);
+}
+
+.university-dossier-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 24%);
+  pointer-events: none;
+}
+
+.university-dossier-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.university-dossier-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.university-dossier-head h4 {
+  color: var(--brand);
+  font-family: var(--font-display);
+  font-size: clamp(1.16rem, 1.45vw, 1.45rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+}
+
+.university-dossier-cta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.university-insight-list {
+  margin-top: 4px;
+}
+
+.university-dossier-sidebar {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
+.university-editorial-summary-rail {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(245, 248, 250, 0.72)),
+    radial-gradient(circle at top right, rgba(120, 132, 255, 0.08), transparent 28%);
+}
+
+.university-admission-board {
+  gap: 14px;
+}
+
+.university-admission-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.university-admission-row {
+  display: grid;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(16, 39, 49, 0.08);
+}
+
+.university-admission-row:first-child {
+  padding-top: 0;
+}
+
+.university-admission-row:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.university-admission-major {
+  display: grid;
+  gap: 4px;
+}
+
+.university-admission-major strong,
+.university-latest-callout strong {
+  color: var(--brand);
+}
+
+.university-admission-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 18px;
+}
+
+.university-admission-meta span,
+.university-admission-major span {
+  color: rgba(16, 39, 49, 0.58);
+  font-size: 0.84rem;
+}
+
+.university-latest-callout {
+  gap: 10px;
+}
+
+.university-latest-callout strong {
+  font-family: var(--font-display);
+  font-size: clamp(1.24rem, 1.8vw, 1.7rem);
+  font-weight: 720;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+}
+
+.university-editorial-list {
+  display: grid;
+  gap: 12px;
+}
+
+.university-editorial-list article {
+  display: grid;
+  gap: 6px;
+  padding-left: 16px;
+  border-left: 1px solid rgba(16, 39, 49, 0.08);
+}
+
+.university-editorial-list strong {
+  color: var(--brand);
+  font-size: 0.92rem;
+  font-weight: 680;
+}
+
+.university-editorial-list p {
+  color: rgba(16, 39, 49, 0.64);
+  font-size: 0.84rem;
+  line-height: 1.58;
+}
+
+.university-editorial-orbit {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  width: 150px;
+  height: 150px;
+  pointer-events: none;
+  z-index: 1;
+  filter: drop-shadow(0 14px 34px rgba(13, 32, 42, 0.14));
+}
+
+.university-editorial-orbit-ring,
+.university-editorial-orbit-dot {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.university-editorial-orbit-ring {
+  inset: 0;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.university-editorial-orbit-ring-a {
+  animation: universityOrbitSpin 16s linear infinite;
+}
+
+.university-editorial-orbit-ring-b {
+  inset: 22px;
+  border-color: rgba(255, 107, 74, 0.24);
+  animation: universityOrbitSpinReverse 12s linear infinite;
+}
+
+.university-editorial-orbit-dot {
+  width: 10px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.32);
+}
+
+.university-editorial-orbit-dot-a {
+  top: 24px;
+  right: 34px;
+  animation: universityOrbitDrift 6.4s ease-in-out infinite;
+}
+
+.university-editorial-orbit-dot-b {
+  left: 24px;
+  bottom: 28px;
+  width: 7px;
+  height: 7px;
+  animation: universityOrbitDrift 8.2s ease-in-out infinite reverse;
+}
+
+@keyframes universityOrbitSpin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes universityOrbitSpinReverse {
+  from {
+    transform: rotate(360deg);
+  }
+
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes universityOrbitDrift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.55;
+  }
+
+  50% {
+    transform: translate3d(8px, -10px, 0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 1180px) {
+  .university-minimal-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .university-head-actions {
+    justify-content: flex-start;
+  }
+
+  .university-dossier-hero,
+  .university-dossier-grid,
+  .university-dossier-signal-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 960px) {
+  .university-summary-grid,
+  .university-admission-meta {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 820px) {
+  .university-dossier-hero {
+    min-height: auto;
+    padding: 14px;
+    border-radius: 28px;
+  }
+
+  .university-dossier-media,
+  .university-dossier-media img {
+    min-height: 300px;
+  }
+
+  .university-editorial-orbit {
+    width: 132px;
+    height: 132px;
+    top: 14px;
+    right: 14px;
+  }
+
+  .university-dossier-hero-copy,
+  .university-dossier-card {
+    padding: 18px;
+  }
+
+  .university-editorial-copy h3 {
+    font-size: clamp(2.3rem, 10vw, 3rem);
+  }
+}

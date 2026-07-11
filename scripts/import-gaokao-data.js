@@ -1,4 +1,4 @@
-import { importAllCsvFiles } from "../server/services/importService.js";
+import { importAllCsvFiles } from "../apps/api/services/importService.js";
 
 console.log(
   JSON.stringify(

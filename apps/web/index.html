@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f3f7f8" />
+    <link rel="preload" as="image" href="/hero-universities/optimized/tsinghua-gate.jpg" fetchpriority="high" />
+    <link rel="preload" as="image" href="/hero-universities/optimized/pku-hall.jpg" fetchpriority="high" />
+    <link rel="preload" as="image" href="/hero-universities/optimized/sysu-library.jpg" fetchpriority="high" />
+    <link rel="preload" as="image" href="/hero-universities/optimized/fudan-xianghui.jpg" />
+    <link rel="preload" as="image" href="/hero-universities/optimized/whu-aerial.jpg" />
+    <style>
+      html,
+      body,
+      #root {
+        min-height: 100%;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at top left, rgba(198, 220, 232, 0.88), transparent 24%),
+          radial-gradient(circle at top right, rgba(255, 225, 214, 0.76), transparent 22%),
+          #f3f7f8;
+      }
+    </style>
+    <title>高考志愿智能体</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

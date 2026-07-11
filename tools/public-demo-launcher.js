@@ -71,7 +71,7 @@ async function start() {
     console.log("Starting local production service in the background...");
     const serverStdout = fs.openSync(serverLogPath, "a");
     const serverStderr = fs.openSync(serverErrorLogPath, "a");
-    const serverProcess = spawn(process.execPath, ["server/index.js"], {
+    const serverProcess = spawn(process.execPath, ["apps/api/index.js"], {
       cwd: projectRoot,
       detached: true,
       windowsHide: true,

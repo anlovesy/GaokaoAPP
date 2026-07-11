@@ -145,11 +145,11 @@
 
 当前仓库已经有一版可运行原型：
 
-- 前端入口：[src/App.jsx](/D:/agent/study/GaokaoApp/src/App.jsx)
-- API 入口：[server/index.js](/D:/agent/study/GaokaoApp/server/index.js)
-- 推荐逻辑：[server/services/plannerService.js](/D:/agent/study/GaokaoApp/server/services/plannerService.js)
-- 数据读取：[server/services/dataService.js](/D:/agent/study/GaokaoApp/server/services/dataService.js)
-- 用户与历史记录：[server/services/dbService.js](/D:/agent/study/GaokaoApp/server/services/dbService.js)
+- 前端入口：[App.jsx](/D:/agent/study/GaokaoApp/apps/web/src/App.jsx)
+- API 入口：[index.js](/D:/agent/study/GaokaoApp/apps/api/index.js)
+- 推荐逻辑：[plannerService.js](/D:/agent/study/GaokaoApp/apps/api/services/plannerService.js)
+- 数据读取：[dataService.js](/D:/agent/study/GaokaoApp/apps/api/services/dataService.js)
+- 用户与历史记录：[dbService.js](/D:/agent/study/GaokaoApp/apps/api/services/dbService.js)
 
 也就是说，这个项目已经具备了“单体式原型”的基础。升级时不需要推倒重来，而是把现有能力进一步模块化和产品化。
 

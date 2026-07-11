@@ -52,11 +52,11 @@ if ($python) {
 
 $nodeModulesPath = Join-Path $projectRoot "node_modules"
 $distIndexPath = Join-Path $projectRoot "dist\index.html"
-$serverPath = Join-Path $projectRoot "server\index.js"
+$serverPath = Join-Path $projectRoot "apps\api\index.js"
 $envExamplePath = Join-Path $projectRoot ".env.example"
 
 Write-Status "node_modules" ($(if (Test-Path $nodeModulesPath) { "OK" } else { "MISSING" })) $nodeModulesPath
-Write-Status "server/index.js" ($(if (Test-Path $serverPath) { "OK" } else { "MISSING" })) $serverPath
+Write-Status "apps/api/index.js" ($(if (Test-Path $serverPath) { "OK" } else { "MISSING" })) $serverPath
 Write-Status "dist/index.html" ($(if (Test-Path $distIndexPath) { "OK" } else { "WARN" })) $(if (Test-Path $distIndexPath) { "Production build is present." } else { "Run npm.cmd run build before starting production mode." })
 Write-Status ".env.example" ($(if (Test-Path $envExamplePath) { "OK" } else { "WARN" })) $(if (Test-Path $envExamplePath) { "Reference env template exists." } else { "Env template not found." })
 

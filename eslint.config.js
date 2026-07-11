@@ -18,14 +18,14 @@ export default [
     ignores: [
       "dist/**",
       "node_modules/**",
-      "public/universities/**",
+      "apps/web/public/universities/**",
       "tmp-runtime/**",
       "_archive/**"
     ]
   },
   js.configs.recommended,
   {
-    files: ["src/**/*.{js,jsx}"],
+    files: ["apps/web/src/**/*.{js,jsx}"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
@@ -56,9 +56,9 @@ export default [
   },
   {
     files: [
-      "server/**/*.js",
+      "apps/api/**/*.js",
       "scripts/**/*.js",
-      "vite.config.js",
+      "apps/web/vite.config.js",
       "eslint.config.js",
       "playwright.config.js"
     ],

@@ -1,0 +1,326 @@
+.admin-users-shell {
+  position: relative;
+  min-height: 100vh;
+  padding: 22px;
+}
+
+.admin-users-background-grid {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(91, 124, 255, 0.12), transparent 24%),
+    radial-gradient(circle at 84% 10%, rgba(255, 121, 88, 0.08), transparent 16%);
+}
+
+.admin-users-os {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 14px;
+  max-width: 1540px;
+  margin: 0 auto;
+}
+
+.admin-users-surface {
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 30px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(243, 246, 252, 0.76)),
+    radial-gradient(circle at top right, rgba(91, 124, 255, 0.1), transparent 36%);
+  box-shadow:
+    0 24px 68px rgba(32, 44, 70, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(26px);
+}
+
+.admin-users-header,
+.admin-users-create,
+.admin-users-list {
+  padding: 18px;
+}
+
+.admin-users-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: end;
+}
+
+.admin-users-eyebrow {
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(91, 124, 255, 0.82);
+}
+
+.admin-users-header-copy,
+.admin-users-panel-head,
+.admin-users-form,
+.admin-users-card-list,
+.admin-users-member-card {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-users-header-copy h1,
+.admin-users-panel-head h2 {
+  color: rgba(11, 18, 32, 0.94);
+  font-family: var(--font-display);
+  font-weight: 620;
+  line-height: 0.96;
+  letter-spacing: -0.05em;
+}
+
+.admin-users-header-copy h1 {
+  max-width: 12ch;
+  font-size: clamp(2rem, 3vw, 3.3rem);
+}
+
+.admin-users-header-copy p,
+.admin-users-stat-card p,
+.admin-users-member-card p,
+.admin-users-message {
+  color: rgba(11, 18, 32, 0.56);
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+.admin-users-header-actions,
+.admin-users-member-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.admin-users-primary-button,
+.admin-users-secondary-button,
+.admin-users-danger-button {
+  min-height: 42px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 720;
+}
+
+.admin-users-primary-button {
+  color: #ffffff;
+  background: linear-gradient(135deg, #8ca6ff, #3658db);
+  box-shadow: 0 18px 38px rgba(91, 124, 255, 0.24);
+}
+
+.admin-users-secondary-button {
+  color: rgba(24, 45, 106, 0.88);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.admin-users-danger-button {
+  color: #9d3926;
+  background: linear-gradient(180deg, rgba(255, 244, 241, 0.96), rgba(255, 233, 228, 0.88));
+}
+
+.admin-users-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-users-note {
+  padding: 18px;
+}
+
+.admin-users-stat-card,
+.admin-users-member-card,
+.admin-users-note-card {
+  padding: 16px;
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(244, 248, 255, 0.68));
+}
+
+.admin-users-stat-card span,
+.admin-users-member-meta span,
+.admin-users-member-actions label span {
+  color: rgba(11, 18, 32, 0.44);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.admin-users-stat-card strong {
+  display: block;
+  margin-top: 6px;
+  color: rgba(11, 18, 32, 0.92);
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 2vw, 1.8rem);
+}
+
+.admin-users-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.82fr) minmax(0, 1.18fr);
+  gap: 14px;
+}
+
+.admin-users-note-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-users-panel-head {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.admin-users-mini-badge,
+.admin-users-role-pill {
+  padding: 7px 12px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.74);
+  color: rgba(24, 45, 106, 0.88);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.admin-users-form label,
+.admin-users-member-actions label {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-users-form input,
+.admin-users-form select,
+.admin-users-member-actions input,
+.admin-users-member-actions select {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgba(175, 188, 222, 0.5);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.76);
+  color: rgba(11, 18, 32, 0.88);
+}
+
+.admin-users-message {
+  margin: 0;
+}
+
+.admin-users-note-card {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-users-note-card span {
+  color: rgba(11, 18, 32, 0.44);
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.admin-users-note-card strong {
+  color: rgba(11, 18, 32, 0.92);
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.28;
+}
+
+.admin-users-card-list {
+  max-height: 66vh;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.admin-users-member-topline,
+.admin-users-member-meta,
+.admin-users-member-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-users-member-topline {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.admin-users-member-topline strong,
+.admin-users-member-meta strong {
+  color: rgba(11, 18, 32, 0.92);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.admin-users-member-meta strong {
+  font-size: 0.84rem;
+}
+
+.admin-users-member-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-users-member-meta {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-users-member-meta article {
+  display: grid;
+  gap: 4px;
+}
+
+.admin-users-role-pill.role-admin {
+  background: linear-gradient(180deg, rgba(228, 236, 255, 0.96), rgba(214, 225, 255, 0.82));
+  color: #2343b5;
+}
+
+.admin-users-role-pill.role-advisor {
+  background: linear-gradient(180deg, rgba(245, 247, 252, 0.92), rgba(236, 240, 248, 0.8));
+  color: rgba(34, 52, 88, 0.78);
+}
+
+@media (max-width: 1180px) {
+  .admin-users-header,
+  .admin-users-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-users-note-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-users-header-actions,
+  .admin-users-member-buttons {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 840px) {
+  .admin-users-shell {
+    padding: 16px;
+  }
+
+  .admin-users-header,
+  .admin-users-note,
+  .admin-users-create,
+  .admin-users-list {
+    padding: 16px;
+    border-radius: 24px;
+  }
+
+  .admin-users-stat-grid,
+  .admin-users-member-meta,
+  .admin-users-member-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-users-primary-button,
+  .admin-users-secondary-button,
+  .admin-users-danger-button {
+    width: 100%;
+  }
+}

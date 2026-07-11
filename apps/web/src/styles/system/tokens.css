@@ -1,0 +1,48 @@
+:root {
+  --bg: #f6f8fa;
+  --bg-deep: #dce6eb;
+  --panel: rgba(255, 255, 255, 0.72);
+  --panel-strong: rgba(255, 255, 255, 0.9);
+  --panel-soft: rgba(255, 255, 255, 0.58);
+  --line: rgba(11, 23, 32, 0.1);
+  --line-strong: rgba(11, 23, 32, 0.2);
+  --text: #0f172a;
+  --muted: rgba(15, 23, 42, 0.62);
+  --brand: #123847;
+  --brand-2: #1a667d;
+  --accent: #ff6b4a;
+  --accent-soft: rgba(255, 107, 74, 0.18);
+  --ok: #1c7f5a;
+  --warn: #b9791f;
+  --shadow-lg: 0 38px 96px rgba(11, 23, 32, 0.12);
+  --shadow-md: 0 24px 56px rgba(11, 23, 32, 0.09);
+  --shadow-sm: 0 14px 30px rgba(11, 23, 32, 0.07);
+  --radius-xl: 34px;
+  --radius-lg: 26px;
+  --radius-md: 18px;
+  --font-editorial:
+    "Baskerville Old Face", "Iowan Old Style", "Palatino Linotype", "Source Han Serif SC",
+    "Songti SC", "STSong", serif;
+  --font-display:
+    "MiSans", "HarmonyOS Sans SC", "Segoe UI Variable Display", "SF Pro Display",
+    "Avenir Next", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-body:
+    "MiSans", "HarmonyOS Sans SC", "Segoe UI Variable Text", "SF Pro Text", "Avenir Next",
+    "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-ui:
+    "MiSans", "HarmonyOS Sans SC", "Segoe UI Variable Text", "SF Pro Text", "Avenir Next",
+    "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", "Consolas", monospace;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-9: 40px;
+  --space-10: 48px;
+  --blur-soft: 16px;
+  --blur-strong: 20px;
+}

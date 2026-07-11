@@ -1,0 +1,2 @@
+province,year,track,batch,university,major,major_group_code,plan_name,plan_count,subject_requirement,required_subjects,one_of_subjects,preferred_subjects,forbidden_subjects,tuition,duration_years,campus_name,is_new_program,is_cooperative_program,is_targeted_program,notes
+广东,2026,物理,本科批,华南理工大学,专业组 216,216,计算机类专业组,90,物理+化学,物理|化学,,,,6850,4,大学城校区,0,0,0,示例计划数据

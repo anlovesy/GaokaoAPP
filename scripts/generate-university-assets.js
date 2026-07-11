@@ -1,11 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { universityImageCatalog } from "../src/universityImageCatalog.js";
+import { universityImageCatalog } from "../apps/web/src/universityImageCatalog.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, "..");
-const assetRoot = path.join(projectRoot, "public", "universities");
+const assetRoot = path.join(projectRoot, "apps", "web", "public", "universities");
 
 async function ensureDirectory(directoryPath) {
   await fs.mkdir(directoryPath, { recursive: true });

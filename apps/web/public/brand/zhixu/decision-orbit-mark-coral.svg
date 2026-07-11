@@ -1,0 +1,7 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>ZHIXU Decision Orbit Mark Coral</title>
+  <circle cx="136" cy="72" r="16" fill="#FF6B4A"/>
+  <path d="M75 167C72 118 110 82 154 83C197 84 229 114 228 156C227 188 207 212 179 221" stroke="#FF6B4A" stroke-width="15" stroke-linecap="round"/>
+  <path d="M174 214L199 221" stroke="#FF6B4A" stroke-width="15" stroke-linecap="round"/>
+  <path d="M184 208L200 221L176 225" stroke="#FF6B4A" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

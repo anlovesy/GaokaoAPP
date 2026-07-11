@@ -13,3 +13,13 @@ tools/public-demo-url.txt
 test-results/
 playwright-report/
 tmp-runtime/
+tmp/
+tmp_*/
+tmp*.pdf
+tmp*.zip
+tmp*.bat
+tmp_sztu_plan/
+.codex-*.log
+*.report.html
+apps/api/storage/
+preview/

@@ -1,0 +1,13 @@
+<svg width="920" height="220" viewBox="0 0 920 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>ZHIXU Decision Orbit Horizontal Lockup</title>
+  <style>
+    .brand-en { font: 700 34px 'Geist', 'General Sans', 'Segoe UI', sans-serif; letter-spacing: 0.28em; fill: #10243A; }
+    .descriptor { font: 400 20px 'Geist', 'General Sans', 'Segoe UI', sans-serif; letter-spacing: 0.02em; fill: #536D89; }
+  </style>
+  <circle cx="76" cy="58" r="12" fill="#10243A"/>
+  <path d="M34 126C32 89 60 62 94 63C127 64 152 88 151 120C150 145 135 164 113 171" stroke="#10243A" stroke-width="11" stroke-linecap="round"/>
+  <path d="M109 166L129 171" stroke="#10243A" stroke-width="11" stroke-linecap="round"/>
+  <path d="M117 161L130 171L111 175" stroke="#10243A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="190" y="84" class="brand-en">ZHIXU AI</text>
+  <text x="190" y="124" class="descriptor">AI College Decision Studio</text>
+</svg>

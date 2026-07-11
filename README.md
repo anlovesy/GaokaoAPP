@@ -1,124 +1,217 @@
-# 高考志愿智能平台
+# 志序 ZHIXU AI
 
-一个面向高考生、家长和志愿填报顾问的智能志愿平台，重点服务广东考生。
+面向高考考生与家长的 AI 志愿填报系统。
 
-它不是单纯的“分数换学校”工具，而是一个带有完整前端工作台、志愿推荐引擎、聊天式 AI 顾问、账号体系、历史记录和数据导入能力的可落地项目。
+项目目标不是做一个简单的“分数换学校”工具，而是搭建一套可持续迭代的 AI 决策工作台，围绕考生画像、志愿推荐、院校专业查询、AI 顾问和历史方案管理，形成完整的产品闭环。
 
-## 项目特点
+## 当前状态
 
-- 三页式产品结构：平台介绍页、独立登录页、正式工作台
-- 广东优先：重点适配广东新高考、专业组、选科限制、冲稳保逻辑
-- 聊天式 AI 顾问：支持连续追问、记忆最近上下文、解释“为什么这么填”
-- 志愿推荐更贴近实战：考虑分数、位次、选科、城市、兴趣、职业规划、风险偏好
-- 冲稳保分层推荐：尽量做到层级清晰，减少滑档风险
-- 游客体验 + 正式账号：游客可体验一次正式方案，登录后可持续使用
-- 多模型接入：支持 OpenAI、DeepSeek、通义千问兼容模式
-- 后台能力：用户管理、密码管理、历史记录、数据导入
-- 可本地运行、可生产构建、可部署到 Render / Zeabur / 自有服务器
+当前仓库已经完成一轮较大规模的结构升级与前端重构，核心方向包括：
 
-## 当前已实现的核心能力
+- 前后端目录升级为 `apps/web + apps/api`
+- Landing / Login / Navigation / Workspace / Advisor / History 多页面产品化
+- 志愿推荐工作流与 AI Advisor 独立化
+- 更完整的数据导入、部署、验证脚本
+- 更贴近生产环境的项目组织方式
 
-### 1. 三页式前端
+## 核心能力
 
-- 首页：平台介绍与能力展示
-- 登录页：独立账号登录入口
-- 工作台页：学生画像、志愿输入、推荐结果、账户中心
-- 独立 AI 顾问页：单独的顾问工作区，不和主工作台挤在同一页面
+### 1. 产品页面体系
 
-### 2. 智能志愿推荐
+- `Landing`：品牌首页，强调高校视觉氛围与产品定位
+- `Login`：独立登录入口
+- `Navigation`：考生画像与偏好录入
+- `Workspace`：志愿推荐主工作台
+- `Advisor`：独立 AI 顾问页面
+- `History`：历史方案与记录页面
 
-- 根据省份、分数、位次、选科生成志愿建议
-- 结合兴趣、人格标签、职业规划、城市偏好调整推荐
-- 输出冲 / 稳 / 保三个层级的院校与专业建议
-- 重点控制低分段“无校可报”的问题
-- 尽量让保底层更接近高把握度，降低滑档概率
-- 支持结合专业组风险、调剂风险做解释
+### 2. 志愿推荐能力
 
-### 3. AI 志愿顾问
+- 基于省份、分数、位次、科类/选科进行推荐
+- 支持冲 / 稳 / 保分层推荐
+- 支持院校、专业、城市、风险偏好等多维条件
+- 支持结合当前画像进行志愿解释
+- 推荐逻辑尽量落在真实数据，而不是纯模型猜测
 
-- 聊天式交互
-- 可结合当前志愿表继续追问
-- 可解释“为什么推荐这个学校 / 专业”
-- 支持连续问答，不再每轮都从头回答
-- 对短追问如“继续”“展开”“1+2”“第一条细说”做延续处理
-- 支持更强的“老师式”表达风格
+### 3. AI Advisor
 
-### 4. 账号、历史记录、游客逻辑
+- 支持连续追问
+- 支持围绕当前方案继续解释
+- 支持学校、专业、就业、政策等问题
+- 支持基于上下文延续对话，而不是每轮都重新开始
+- 已增加对“继续 / 第二个 / 前两个 / 继续按就业说”这类短追问的承接能力
 
-- 登录后可保存志愿方案和聊天记录
-- 可恢复最近一次会话和规划结果
-- 游客模式默认只开放一次正式志愿体验
-- 后台支持管理员和顾问两类角色
+### 4. 数据与导入
 
-### 5. 数据导入与数据结构
+- 支持一分一段、院校专业线、招生计划等数据导入脚本
+- 支持后续逐步扩展到多省份、多年份
+- 已准备数据导入模板与校验脚本
 
-- 支持一分一段表导入
-- 支持院校专业分数线结构导入
-- 已内置演示规则和导入后的结构化数据读取能力
-- 项目中已经准备了广东 2025 相关数据整理脚本与导入链路
+### 5. 账号与后台能力
 
-## 当前适合的使用场景
-
-- 广东高考生自己做第一版志愿草案
-- 家长和学生一起讨论学校、专业、城市取舍
-- 志愿填报老师 / 顾问做咨询辅助
-- 搭建自己的高考志愿 SaaS / 工作室平台原型
+- 登录用户可使用更完整的 Advisor 能力
+- 管理端支持用户管理相关页面
+- 游客模式与正式账号模式分离
 
 ## 技术栈
 
-- 前端：React 19 + Vite
-- 后端：Express
-- 数据存储：SQLite
-- AI 接入：OpenAI Compatible API
-- 构建：Vite
-- 部署：Render / Zeabur / 自建服务器
+### 前端
+
+- React 19
+- Vite 7
+- Framer Motion
+- GSAP
+
+### 后端
+
+- Express 5
+- Zod
+- OpenAI Compatible SDK
+
+### AI / 模型接入
+
+- OpenAI
+- DeepSeek
+- 通义千问兼容模式
+
+## 项目结构
+
+```text
+apps/
+  api/                  Express API、AI、数据服务、模块化业务逻辑
+  shared/               预留共享模块
+  web/                  React 前端应用
+
+data/
+  import-templates/     数据导入模板
+
+docs/
+  deployment/           部署与公网演示文档
+  design-system/        设计系统与视觉规范文档
+
+preview/                设计预览与演示资源
+scripts/                导入、校验、预览、截图等脚本
+tests/e2e/              E2E 测试
+tools/                  启动辅助与演示工具
+```
+
+## 前端结构
+
+前端主目录：
+
+```text
+apps/web/src/
+  app/
+  components/
+  modules/
+  motion/
+  pages/
+  providers/
+  styles/
+  AppRoot.jsx
+  main.jsx
+```
+
+页面目录重点包括：
+
+- [apps/web/src/pages/landing](/D:/agent/study/GaokaoApp/apps/web/src/pages/landing)
+- [apps/web/src/pages/auth](/D:/agent/study/GaokaoApp/apps/web/src/pages/auth)
+- [apps/web/src/pages/navigation](/D:/agent/study/GaokaoApp/apps/web/src/pages/navigation)
+- [apps/web/src/pages/workspace](/D:/agent/study/GaokaoApp/apps/web/src/pages/workspace)
+- [apps/web/src/pages/advisor](/D:/agent/study/GaokaoApp/apps/web/src/pages/advisor)
+- [apps/web/src/pages/history](/D:/agent/study/GaokaoApp/apps/web/src/pages/history)
+
+## 后端结构
+
+后端主目录：
+
+```text
+apps/api/
+  modules/              模块化业务能力
+  services/             数据服务、LLM、导入等服务层
+  middleware/           中间件
+  data/                 数据目录
+  storage/              运行时存储
+  app.js
+  index.js
+```
+
+Advisor 相关模块主要位于：
+
+- [apps/api/modules/advisor](/D:/agent/study/GaokaoApp/apps/api/modules/advisor)
+- [apps/api/services/llmService.js](/D:/agent/study/GaokaoApp/apps/api/services/llmService.js)
+- [apps/api/services/advisorFollowUpService.js](/D:/agent/study/GaokaoApp/apps/api/services/advisorFollowUpService.js)
 
 ## 本地开发
 
 安装依赖：
 
 ```bash
-npm.cmd install
+npm install
 ```
 
-启动开发环境：
+启动前后端开发环境：
 
 ```bash
-npm.cmd run dev
+npm run dev
 ```
 
 默认地址：
 
-- 前端：`http://localhost:5173`
-- 后端：`http://localhost:3001`
+- 前端：[http://127.0.0.1:4173](http://127.0.0.1:4173)
+- 后端健康检查：[http://127.0.0.1:3001/api/health](http://127.0.0.1:3001/api/health)
 
-## 生产构建
-
-构建前端：
+单独启动：
 
 ```bash
-npm.cmd run build
+npm run dev:client
+npm run dev:server
 ```
 
-启动生产服务：
+## 构建与运行
+
+生产构建：
 
 ```bash
-npm.cmd start
+npm run build
 ```
 
-默认生产访问地址：
-
-- `http://localhost:3001`
-
-说明：
-
-- 后端会托管 `dist` 下的前端静态资源
-- 所以生产模式下通常直接访问 `3001` 端口即可
-
-## 代码检查
+启动后端服务：
 
 ```bash
-npm.cmd run check
+npm start
+```
+
+## 校验脚本
+
+语法检查：
+
+```bash
+npm run check
+```
+
+Lint：
+
+```bash
+npm run lint
+```
+
+Advisor 质量校验：
+
+```bash
+npm run verify:advisor-quality
+```
+
+Planner 质量校验：
+
+```bash
+npm run verify:planner-quality
+```
+
+前端综合校验：
+
+```bash
+npm run verify:frontend
 ```
 
 ## 环境变量
@@ -127,7 +220,7 @@ npm.cmd run check
 
 [.env.example](/D:/agent/study/GaokaoApp/.env.example)
 
-推荐配置：
+常用配置：
 
 ```env
 PORT=3001
@@ -149,136 +242,44 @@ DASHSCOPE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 
 说明：
 
-- `DATA_DIR` 用于持久化数据库、上传文件和生成后的结构化数据
-- 本地开发可不设置 `DATA_DIR`
-- 生产部署建议设置持久化目录
-- `ADMIN_USERNAME` 默认可设为 `LYYzhiyuan`
-- `ADMIN_PASSWORD` 必须改成你自己的强密码
+- `DATA_DIR` 用于持久化数据库、上传文件和生成数据
+- 生产环境建议显式配置 `DATA_DIR`
+- `ADMIN_PASSWORD` 必须替换为强密码
 
-## 默认账号逻辑
+## 部署文档
 
-项目不是把账号密码写死在前端，而是走后端环境变量和数据库逻辑。
+部署与公网演示文档位于：
 
-管理员账号：
+- [docs/deployment/DEPLOYMENT.md](/D:/agent/study/GaokaoApp/docs/deployment/DEPLOYMENT.md)
+- [docs/deployment/PUBLIC_DEMO.md](/D:/agent/study/GaokaoApp/docs/deployment/PUBLIC_DEMO.md)
+- [docs/deployment/ACCESS_AND_USERS.md](/D:/agent/study/GaokaoApp/docs/deployment/ACCESS_AND_USERS.md)
+- [docs/deployment/SERVER_PRODUCTION.md](/D:/agent/study/GaokaoApp/docs/deployment/SERVER_PRODUCTION.md)
+- [docs/deployment/ZEABUR.md](/D:/agent/study/GaokaoApp/docs/deployment/ZEABUR.md)
 
-- 用户名通常来自 `ADMIN_USERNAME`
-- 密码来自 `ADMIN_PASSWORD`
-- 启动后端时会自动检查并初始化管理员账号
+## 数据与脚本
 
-角色说明：
+常用脚本包括：
 
-- `admin`：管理员，可管理用户、查看更完整记录
-- `advisor`：普通顾问账号，可正常使用系统
+- [scripts/import-gaokao-data.js](/D:/agent/study/GaokaoApp/scripts/import-gaokao-data.js)
+- [scripts/generate-university-assets.js](/D:/agent/study/GaokaoApp/scripts/generate-university-assets.js)
+- [scripts/verify-advisor-quality.mjs](/D:/agent/study/GaokaoApp/scripts/verify-advisor-quality.mjs)
+- [scripts/verify-planner-quality.mjs](/D:/agent/study/GaokaoApp/scripts/verify-planner-quality.mjs)
 
-游客模式：
+## 当前定位
 
-- 未登录用户可进入游客模式
-- 默认只开放一次正式志愿方案体验
-- 连续聊天、上下文记忆、历史记录更适合登录后使用
+这个项目当前更接近：
 
-## AI 模型接入
+- AI 高考志愿顾问产品原型
+- 可持续扩展的志愿推荐工作台
+- 具备继续走向生产环境的前后端基础
 
-当前已支持：
+它已经不再只是单页 Demo，但也仍然处于持续重构与数据完善阶段。
 
-- OpenAI
-- DeepSeek
-- 通义千问兼容模式
+## 下一步建议
 
-后端会自动读取已配置的可用模型，并在前端展示。
+如果继续往生产环境推进，优先级建议是：
 
-如果没有配置任何在线模型：
-
-- 系统会回退到本地规则式顾问回复
-- 仍可演示连续追问和志愿解释逻辑
-
-## 广东 2025 数据
-
-项目已围绕广东考生做了重点优化，并准备了 2025 相关数据整理与导入链路。
-
-你可以关注这些目录和脚本：
-
-- [scripts/prepare-guangdong-2025-data.py](/D:/agent/study/GaokaoApp/scripts/prepare-guangdong-2025-data.py)
-- [server/data/generated](/D:/agent/study/GaokaoApp/server/data/generated)
-- [data/import](/D:/agent/study/GaokaoApp/data/import)
-
-重新导入数据：
-
-```bash
-npm.cmd run import:data
-```
-
-如果要重新生成广东 2025 整理数据，可使用项目里的 Python 脚本。
-
-## 公网临时演示
-
-如果你只是想临时给别人一个公网链接演示，可以使用项目里已经准备好的脚本：
-
-- [start-public-demo.cmd](/D:/agent/study/GaokaoApp/start-public-demo.cmd)
-- [stop-public-demo.cmd](/D:/agent/study/GaokaoApp/stop-public-demo.cmd)
-
-更详细说明：
-
-- [deploy/PUBLIC_DEMO.md](/D:/agent/study/GaokaoApp/deploy/PUBLIC_DEMO.md)
-- [deploy/ACCESS_AND_USERS.md](/D:/agent/study/GaokaoApp/deploy/ACCESS_AND_USERS.md)
-
-## 部署说明
-
-### Render
-
-项目已包含 Render 配置：
-
-- [render.yaml](/D:/agent/study/GaokaoApp/render.yaml)
-- [deploy/DEPLOYMENT.md](/D:/agent/study/GaokaoApp/deploy/DEPLOYMENT.md)
-
-当前 Render 配置包含：
-
-- `healthCheckPath: /api/health`
-- Node 24
-- `/var/data` 持久化磁盘
-- `DATA_DIR=/var/data/gaokao`
-
-### Zeabur
-
-如果 Render 因绑卡等问题不方便继续，推荐看：
-
-- [deploy/ZEABUR.md](/D:/agent/study/GaokaoApp/deploy/ZEABUR.md)
-
-### 自建服务器 / 长期生产
-
-如果你后续准备正式商用、长期使用，建议看：
-
-- [deploy/SERVER_PRODUCTION.md](/D:/agent/study/GaokaoApp/deploy/SERVER_PRODUCTION.md)
-
-## 项目目录
-
-```text
-src/                           React 前端
-server/                        Express 后端
-server/services/               推荐、聊天、导入、数据库服务
-server/data/generated/         结构化数据
-data/import/                   可导入 CSV 数据
-data/official-downloads/       官方数据与中间文件
-scripts/                       数据整理脚本
-deploy/                        部署与演示说明
-tools/                         公网演示和辅助工具
-```
-
-## 当前项目定位
-
-这个项目现在已经不是单纯的 Demo。
-
-它更像一个可以继续打磨成：
-
-- 高考志愿填报顾问平台
-- 志愿工作室接单工具
-- 家长 / 学生咨询系统
-- 可部署的商业化原型
-
-## 后续建议
-
-如果你准备继续把它做强，优先级建议是：
-
-1. 继续补强广东 2025 真实院校专业数据
-2. 继续优化 AI 顾问的人设、追问质量和推荐解释
-3. 增加更细的后台运营能力，例如用户审核、套餐、权限控制
-4. 做更正式的部署方案和域名上线
+1. 继续补强真实院校、专业、招生计划与学费数据
+2. 继续完善 Advisor 的连续记忆、引用与工具调用质量
+3. 补齐认证、RBAC、监控、日志与部署规范
+4. 持续清理临时脚本和演示资产，保持仓库整洁
