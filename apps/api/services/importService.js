@@ -88,18 +88,15 @@ export function importAllCsvFiles() {
   const dataImportService = getDataEngine().services.dataImport;
   let enrollmentPlanCount = 0;
 
-  if (importFiles.some((file) => file.startsWith("university_major_lines"))) {
-    dataImportService.clearEnrollmentPlanRowsBySourceType("historical_inference");
-  }
-
-  if (importFiles.some((file) => file.startsWith("enrollment_plan"))) {
-    dataImportService.clearEnrollmentPlanRowsBySourceType("official_csv");
-  }
-
   for (const file of importFiles) {
+    const datasetType = datasetTypeFromFileName(file);
+    if (!datasetType) {
+      continue;
+    }
+
     const rows = parseCsv(fs.readFileSync(path.join(importDir, file), "utf8"));
 
-    if (file.startsWith("province_score_rank")) {
+    if (datasetType === "province_score_rank") {
       rows.forEach((row) => {
         provinceScoreRank.push({
           province: row.province,
@@ -120,7 +117,7 @@ export function importAllCsvFiles() {
       continue;
     }
 
-    if (file.startsWith("university_major_lines")) {
+    if (datasetType === "university_major_lines") {
       rows.forEach((row) => {
         universityMajorLines.push({
           province: row.province,
@@ -152,7 +149,7 @@ export function importAllCsvFiles() {
       continue;
     }
 
-    if (file.startsWith("enrollment_plan")) {
+    if (datasetType === "enrollment_plan") {
       const result = dataImportService.importEnrollmentPlanRows({
         fileName: file,
         rows
@@ -183,16 +180,98 @@ export function importAllCsvFiles() {
   };
 }
 
+export function importCsvFile({ filePath, fileName, datasetType }) {
+  const normalizedDatasetType = normalizeDatasetType(datasetType);
+  if (!normalizedDatasetType) {
+    throw new Error("无效的数据集类型");
+  }
+
+  assertDatasetTypeMatchesFileName(fileName, normalizedDatasetType);
+
+  const fileScope = path.resolve(filePath);
+  const allowedImportRoot = path.resolve(importDir);
+  if (fileScope !== allowedImportRoot && !fileScope.startsWith(`${allowedImportRoot}${path.sep}`)) {
+    throw new Error("导入文件必须位于受控导入目录内");
+  }
+
+  const rows = parseCsv(fs.readFileSync(filePath, "utf8"));
+  const result = importRowsByDatasetType({
+    fileName,
+    datasetType: normalizedDatasetType,
+    rows
+  });
+  invalidateGeneratedGaokaoDataCache();
+
+  return {
+    ...result,
+    importedDatasetType: normalizedDatasetType,
+    importedRowCount: Number(result.insertedRows || 0)
+  };
+}
+
+export function assertDatasetTypeMatchesFileName(fileName, datasetType) {
+  const normalizedDatasetType = normalizeDatasetType(datasetType);
+  const inferredDatasetType = datasetTypeFromFileName(fileName);
+  if (normalizedDatasetType && inferredDatasetType && inferredDatasetType !== normalizedDatasetType) {
+    throw new Error(
+      `文件名显示为 ${inferredDatasetType}，但请求类型为 ${normalizedDatasetType}，请修正后重试`
+    );
+  }
+
+  if (normalizedDatasetType && !inferredDatasetType) {
+    throw new Error(
+      `文件名必须以 ${normalizedDatasetType}_ 开头，以确保导入类型与实际文件一致`
+    );
+  }
+}
+
+function importRowsByDatasetType({ fileName, datasetType, rows }) {
+  const dataImportService = getDataEngine().services.dataImport;
+
+  if (datasetType === "province_score_rank") {
+    return dataImportService.importProvinceScoreRankRows({ fileName, rows });
+  }
+
+  if (datasetType === "university_major_lines") {
+    return dataImportService.importUniversityMajorLineRows({ fileName, rows });
+  }
+
+  return dataImportService.importEnrollmentPlanRows({ fileName, rows });
+}
+
+function normalizeDatasetType(value) {
+  return ["province_score_rank", "university_major_lines", "enrollment_plan"].includes(value)
+    ? value
+    : null;
+}
+
+function datasetTypeFromFileName(fileName) {
+  const normalized = path.basename(String(fileName || "")).toLowerCase();
+  if (/^province_score_rank_\d{4}(?:_[a-z0-9-]+)*\.csv$/.test(normalized)) {
+    return "province_score_rank";
+  }
+
+  if (/^university_major_lines_\d{4}(?:_[a-z0-9-]+)*\.csv$/.test(normalized)) {
+    return "university_major_lines";
+  }
+
+  if (/^enrollment_plan_\d{4}(?:_[a-z0-9-]+)*\.csv$/.test(normalized)) {
+    return "enrollment_plan";
+  }
+
+  return null;
+}
+
 function getDatasetPriority(fileName) {
-  if (fileName.startsWith("province_score_rank")) {
+  if (datasetTypeFromFileName(fileName) === "province_score_rank") {
     return 1;
   }
 
-  if (fileName.startsWith("university_major_lines")) {
+  if (datasetTypeFromFileName(fileName) === "university_major_lines") {
     return 2;
   }
 
-  if (fileName.startsWith("enrollment_plan")) {
+  if (datasetTypeFromFileName(fileName) === "enrollment_plan") {
     return 3;
   }
 
@@ -201,7 +280,8 @@ function getDatasetPriority(fileName) {
 
 export function saveImportFile(fileName, content) {
   ensureDataDirectories();
-  const safeName = path.basename(fileName);
+  const originalName = path.basename(fileName);
+  const safeName = originalName;
   const filePath = path.join(importDir, safeName);
   fs.writeFileSync(filePath, content, "utf8");
   return filePath;

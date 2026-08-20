@@ -18,6 +18,7 @@
     "verify:planner-quality": "node scripts/verify-planner-quality.mjs",
     "verify:advisor-quality": "node scripts/verify-advisor-quality.mjs",
     "import:data": "node scripts/import-gaokao-data.js",
+    "data:scut:2026": "node scripts/fetch-scut-2026-enrollment-plan.mjs",
     "assets:universities": "node scripts/generate-university-assets.js",
     "test:smoke": "playwright test",
     "verify:frontend": "npm run lint && npm run format:check && npm run build && npm run check"

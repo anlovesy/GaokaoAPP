@@ -11,7 +11,12 @@ export class AdvisorToolRouter {
     this.getDataEngine = getDataEngine;
   }
 
-  execute({ executionPlan = null, contextPacket = null, memorySnapshot = null, payload = null } = {}) {
+  execute({
+    executionPlan = null,
+    contextPacket = null,
+    memorySnapshot = null,
+    payload = null
+  } = {}) {
     const scope = buildAdvisorQueryScope({ contextPacket, memorySnapshot, payload });
     const entities = this.entityResolver
       ? this.entityResolver.resolve({ scope, contextPacket, memorySnapshot })
@@ -134,7 +139,7 @@ function buildAdmissionEvidence({ router, scope, entities, intentKey }) {
 
   const engine = router.getDataEngine();
   const comparison = entities?.comparison || createEmptyComparison();
-  let rows = [];
+  let rows;
 
   if (comparison.active && comparison.universities.length >= 2) {
     rows = comparison.universities.flatMap((item) =>
@@ -224,7 +229,7 @@ function buildEnrollmentPlanEvidence({ router, scope, entities, memorySnapshot }
 
   const engine = router.getDataEngine();
   const comparison = entities?.comparison || createEmptyComparison();
-  let rows = [];
+  let rows;
 
   if (comparison.active && comparison.universities.length >= 2) {
     rows = comparison.universities.flatMap((item) =>
@@ -373,18 +378,18 @@ function buildMajorEvidence({ router, scope, entities, memorySnapshot }) {
         targets.length +
         (comparisonSupport?.historicalMatches?.length || 0) +
         (comparisonSupport?.anchorPlans?.length || 0),
-      citations: targets.flatMap((item) => [
-        {
-          sourceType: "major_database",
-          label: `${item.major.name} major profile`
-        },
-        ...item.history.slice(0, 2).map((historyItem) => ({
-          sourceType: "admission_database",
-          label: `${historyItem.year} ${historyItem.university} ${item.major.name} admission line`
-        }))
-      ]).concat(
-        buildMajorSupportCitations(comparisonSupport)
-      )
+      citations: targets
+        .flatMap((item) => [
+          {
+            sourceType: "major_database",
+            label: `${item.major.name} major profile`
+          },
+          ...item.history.slice(0, 2).map((historyItem) => ({
+            sourceType: "admission_database",
+            label: `${historyItem.year} ${historyItem.university} ${item.major.name} admission line`
+          }))
+        ])
+        .concat(buildMajorSupportCitations(comparisonSupport))
     };
   }
 
@@ -517,10 +522,14 @@ function buildEmploymentEvidence({ router, scope, entities, memorySnapshot }) {
 
 function buildKnowledgeBaseEvidence({ contextPacket, memorySnapshot }) {
   const payload = {
-    strategy: memorySnapshot?.workspace?.strategy || contextPacket?.workspace?.summary?.strategy || "",
-    overview: memorySnapshot?.workspace?.overview || contextPacket?.workspace?.summary?.overview || "",
+    strategy:
+      memorySnapshot?.workspace?.strategy || contextPacket?.workspace?.summary?.strategy || "",
+    overview:
+      memorySnapshot?.workspace?.overview || contextPacket?.workspace?.summary?.overview || "",
     careerAdvice:
-      memorySnapshot?.workspace?.careerAdvice || contextPacket?.workspace?.summary?.careerAdvice || "",
+      memorySnapshot?.workspace?.careerAdvice ||
+      contextPacket?.workspace?.summary?.careerAdvice ||
+      "",
     topDirections:
       memorySnapshot?.workspace?.topDirections ||
       contextPacket?.workspace?.diagnosis?.topDirections ||
@@ -531,7 +540,8 @@ function buildKnowledgeBaseEvidence({ contextPacket, memorySnapshot }) {
     ok: true,
     evidenceKey: "knowledgeEvidence",
     payload,
-    itemCount: Object.values(payload).filter((item) => (Array.isArray(item) ? item.length : item)).length,
+    itemCount: Object.values(payload).filter((item) => (Array.isArray(item) ? item.length : item))
+      .length,
     citations: [
       {
         sourceType: "knowledge_base",
@@ -613,14 +623,7 @@ function buildUniversityHistoryEvidence({
   }));
 }
 
-function buildMajorHistoryEvidence({
-  engine,
-  majorId,
-  majorName,
-  provinceCode,
-  year,
-  trackType
-}) {
+function buildMajorHistoryEvidence({ engine, majorId, majorName, provinceCode, year, trackType }) {
   if (!majorId) {
     return [];
   }
@@ -693,7 +696,9 @@ function buildMajorSnapshotPayload({ engine, scope, target }) {
       evidenceNote: target.id
         ? ""
         : "Current admissions data is still grouped by professional-group records, so this major is being compared with soft major mapping plus live plan anchors.",
-      careerPaths: Array.isArray(majorProfile.careerPaths) ? majorProfile.careerPaths.slice(0, 4) : [],
+      careerPaths: Array.isArray(majorProfile.careerPaths)
+        ? majorProfile.careerPaths.slice(0, 4)
+        : [],
       postgraduateDirections: Array.isArray(majorProfile.postgraduateDirections)
         ? majorProfile.postgraduateDirections.slice(0, 4)
         : []
@@ -796,7 +801,9 @@ function resolveAnchorUniversities({ engine, scope, entities }) {
       );
     })
     .filter((item) => item?.id)
-    .filter((item, index, array) => array.findIndex((candidate) => candidate.id === item.id) === index)
+    .filter(
+      (item, index, array) => array.findIndex((candidate) => candidate.id === item.id) === index
+    )
     .slice(0, 3);
 }
 

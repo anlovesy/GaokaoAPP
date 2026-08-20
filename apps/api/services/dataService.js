@@ -2,6 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getDataEngine } from "./dbService.js";
+import {
+  denormalizeProvinceName,
+  normalizeProvinceCode as normalizeCatalogProvinceCode
+} from "../modules/data-engine/provinceCatalog.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -378,7 +382,11 @@ function parseJsonArray(value) {
   }
 }
 
-function normalizeProvinceCodeSafe(value) {
+function _normalizeProvinceCodeSafe(value) {
+  return normalizeCatalogProvinceCode(value);
+}
+
+function _legacyNormalizeProvinceCodeSafe(value) {
   const normalized = String(value || "").trim();
 
   if (normalized === "广东" || normalized === "骞夸笢") {
@@ -388,7 +396,7 @@ function normalizeProvinceCodeSafe(value) {
   return null;
 }
 
-function normalizeTrackTypeSafe(value) {
+function _normalizeTrackTypeSafe(value) {
   const normalized = String(value || "").trim();
 
   if (normalized === "物理" || normalized === "鐗╃悊") {
@@ -403,6 +411,10 @@ function normalizeTrackTypeSafe(value) {
 }
 
 function normalizeProvinceCodeStrict(value) {
+  return normalizeCatalogProvinceCode(value);
+}
+
+function _legacyNormalizeProvinceCodeStrict(value) {
   const normalized = String(value || "").trim();
 
   if (normalized === "\u5e7f\u4e1c" || normalized === "骞夸笢") {
@@ -440,7 +452,11 @@ function normalizeRelationalScope(province, track) {
   };
 }
 
-function normalizeProvinceCode(value) {
+function _normalizeProvinceCode(value) {
+  return normalizeCatalogProvinceCode(value);
+}
+
+function _legacyNormalizeProvinceCode(value) {
   const normalized = String(value || "").trim();
 
   switch (normalized) {
@@ -452,7 +468,7 @@ function normalizeProvinceCode(value) {
   }
 }
 
-function normalizeTrackType(value) {
+function _normalizeTrackType(value) {
   const normalized = String(value || "").trim();
 
   if (normalized === "物理" || normalized === "鐗╃悊") {
@@ -467,6 +483,10 @@ function normalizeTrackType(value) {
 }
 
 function denormalizeProvinceCode(value) {
+  return denormalizeProvinceName(value);
+}
+
+function _legacyDenormalizeProvinceCode(value) {
   if (value === "GD") {
     return "广东";
   }

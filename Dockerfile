@@ -12,6 +12,7 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/apps/api ./apps/api
+COPY --from=build /app/apps/shared ./apps/shared
 COPY --from=build /app/.env.example ./.env.example
 EXPOSE 3001
 CMD ["node", "apps/api/index.js"]

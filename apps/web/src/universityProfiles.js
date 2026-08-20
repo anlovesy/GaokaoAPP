@@ -57,7 +57,7 @@ const PROFILE_DEFAULTS = {
 const UNIVERSITY_IMAGE_ALIASES = universityImageCatalog;
 
 const UNIVERSITY_FALLBACK_IMAGE_POOL = universityImageCatalog.map(
-  (entry) => `/universities/${entry.slug}/cover.jpg`
+  (entry) => `/universities/${entry.slug}/cover.webp`
 );
 
 function createProfile(profile) {
@@ -68,7 +68,7 @@ function createProfile(profile) {
 }
 
 function buildUniversityVisuals(slug) {
-  const cover = `/universities/${slug}/cover.jpg`;
+  const cover = `/universities/${slug}/cover.webp`;
 
   return {
     assetSlug: slug,
@@ -87,7 +87,7 @@ function pickFallbackUniversityImage(universityName) {
   const mappedSlug = findUniversityAssetSlug(universityName);
 
   if (mappedSlug) {
-    return `/universities/${mappedSlug}/cover.jpg`;
+    return `/universities/${mappedSlug}/cover.webp`;
   }
 
   if (!normalizedName) {
@@ -118,7 +118,12 @@ function buildFallbackUniversityVisuals(universityName) {
 }
 
 function pickFirstImage(...candidates) {
-  return candidates.find((value) => typeof value === "string" && value.trim());
+  const candidate = candidates.find((value) => typeof value === "string" && value.trim());
+  return candidate ? normalizeLocalUniversityImage(candidate) : "";
+}
+
+function normalizeLocalUniversityImage(value) {
+  return value.replace(/^\/universities\/([^/]+)\/cover\.jpg$/, "/universities/$1/cover.webp");
 }
 
 function findUniversityAssetSlug(universityName) {

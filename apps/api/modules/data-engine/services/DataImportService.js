@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
+import { normalizeProvinceCode as normalizeCatalogProvinceCode } from "../provinceCatalog.js";
 
-const PROVINCE_CODE_MAP = new Map([
+const _LEGACY_PROVINCE_CODE_MAP = new Map([
   ["北京", "BJ"],
   ["天津", "TJ"],
   ["河北", "HE"],
@@ -51,6 +52,7 @@ export class DataImportService {
       return this.buildEmptyImportResult("province_score_rank", fileName, rows.length);
     }
 
+    this.assertSingleScope(normalizedRows, fileName);
     const scope = this.buildScope(normalizedRows[0]);
     const sourceId = this.createDataSource({
       sourceType: "csv",
@@ -145,6 +147,7 @@ export class DataImportService {
       return this.buildEmptyImportResult("university_major_lines", fileName, rows.length);
     }
 
+    this.assertSingleScope(normalizedRows, fileName);
     const scope = this.buildScope(normalizedRows[0]);
     const sourceId = this.createDataSource({
       sourceType: "csv",
@@ -256,14 +259,13 @@ export class DataImportService {
   }
 
   importEnrollmentPlanRows({ fileName, rows }) {
-    const normalizedRows = rows
-      .map((row) => this.normalizeEnrollmentPlanRow(row))
-      .filter(Boolean);
+    const normalizedRows = rows.map((row) => this.normalizeEnrollmentPlanRow(row)).filter(Boolean);
 
     if (!normalizedRows.length) {
       return this.buildEmptyImportResult("enrollment_plan", fileName, rows.length);
     }
 
+    this.assertSingleScope(normalizedRows, fileName);
     const scope = this.buildScope(normalizedRows[0]);
     const sourceId = this.createDataSource({
       sourceType: "csv",
@@ -292,6 +294,11 @@ export class DataImportService {
           examMode: scope.examMode
         });
         this.upsertYearDimension(scope.year);
+
+        this.clearEnrollmentPlanRowsByScope({
+          ...scope,
+          planSourceType: "official_csv"
+        });
 
         for (const row of normalizedRows) {
           const universityId = this.getOrCreateUniversity(row, universityCache);
@@ -366,6 +373,38 @@ export class DataImportService {
       `,
       planSourceType
     );
+  }
+
+  clearEnrollmentPlanRowsByScope({ provinceCode, year, trackType, planSourceType }) {
+    this.adapter.run(
+      `
+        DELETE FROM enrollment_plan
+        WHERE province_code = ?
+          AND year = ?
+          AND track_type = ?
+          AND plan_source_type = ?
+      `,
+      provinceCode,
+      year,
+      trackType,
+      planSourceType
+    );
+  }
+
+  assertSingleScope(rows, fileName) {
+    const first = this.buildScope(rows[0]);
+    const mixed = rows.some((row) => {
+      const scope = this.buildScope(row);
+      return (
+        scope.provinceCode !== first.provinceCode ||
+        scope.year !== first.year ||
+        scope.trackType !== first.trackType
+      );
+    });
+
+    if (mixed) {
+      throw new Error(`文件 ${fileName} 同时包含多个省份、年份或科类，已拒绝导入`);
+    }
   }
 
   normalizeProvinceScoreRankRow(row) {
@@ -472,8 +511,7 @@ export class DataImportService {
         this.extractUniversityCode(notes) ||
         this.createStableCode("UNIV", universityName),
       majorName,
-      majorCode:
-        String(row.major_code || "").trim() || this.createStableCode("MAJOR", majorName),
+      majorCode: String(row.major_code || "").trim() || this.createStableCode("MAJOR", majorName),
       majorGroupCode:
         String(row.major_group_code || "").trim() || this.extractMajorGroupCode(majorName, notes),
       planName: String(row.plan_name || majorName).trim(),
@@ -829,14 +867,17 @@ export class DataImportService {
 
   buildEnrollmentPlanKey(row, majorId) {
     if (row.majorGroupCode) {
-      return `group:${row.majorGroupCode}`;
+      // A group can contain many concrete majors; never let one major overwrite another.
+      return `group:${row.majorGroupCode}:major:${majorId || "unknown"}`;
     }
 
     if (majorId) {
       return `major:${majorId}`;
     }
 
-    const fallbackName = String(row.planName || row.majorName || "").trim().toLowerCase();
+    const fallbackName = String(row.planName || row.majorName || "")
+      .trim()
+      .toLowerCase();
     return `name:${fallbackName}`;
   }
 
@@ -941,7 +982,7 @@ export class DataImportService {
       return null;
     }
 
-    return PROVINCE_CODE_MAP.get(normalized) || this.createStableCode("P", normalized);
+    return normalizeCatalogProvinceCode(normalized) || this.createStableCode("P", normalized);
   }
 
   normalizeTrackType(value) {
@@ -1080,10 +1121,18 @@ export class DataImportService {
       return value;
     }
 
-    return TRUE_VALUES.has(String(value || "").trim().toLowerCase());
+    return TRUE_VALUES.has(
+      String(value || "")
+        .trim()
+        .toLowerCase()
+    );
   }
 
   createStableCode(prefix, value) {
-    return `${prefix}_${crypto.createHash("sha1").update(String(value || "")).digest("hex").slice(0, 12)}`;
+    return `${prefix}_${crypto
+      .createHash("sha1")
+      .update(String(value || ""))
+      .digest("hex")
+      .slice(0, 12)}`;
   }
 }

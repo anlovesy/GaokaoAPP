@@ -328,6 +328,7 @@ function SchoolImageFrame({ image, alt, title, className }) {
           src={image}
           alt={alt}
           loading="lazy"
+          decoding="async"
           onError={(event) => {
             event.currentTarget.style.display = "none";
             event.currentTarget.parentElement?.setAttribute("data-empty", "true");

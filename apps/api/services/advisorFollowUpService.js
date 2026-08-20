@@ -587,6 +587,7 @@ function matchStructuredSingleIndex(content = "") {
   return matched ? parseStructuredIndexToken(matched[1]) : 0;
 }
 
+/* eslint-disable no-useless-escape */
 function matchStructuredIndexGroup(content = "") {
   const compact = String(content || "");
   if (!/^[第123一二三个条点和与及加\+、]+$/.test(compact)) {
@@ -599,6 +600,7 @@ function matchStructuredIndexGroup(content = "") {
 
   return [...new Set(indexes)];
 }
+/* eslint-enable no-useless-escape */
 
 function parseStructuredIndexToken(token = "") {
   const normalized = String(token || "");

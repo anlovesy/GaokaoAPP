@@ -12,7 +12,7 @@ const heroCards = [
     id: "tsinghua",
     name: "清华大学",
     city: "北京",
-    image: "/hero-universities/optimized/tsinghua-gate.jpg",
+    image: "/hero-universities/optimized/tsinghua-gate.webp",
     className: "landing-card-tsinghua",
     depthX: 0.24,
     depthY: 0.18
@@ -21,7 +21,7 @@ const heroCards = [
     id: "fudan",
     name: "复旦大学",
     city: "上海",
-    image: "/hero-universities/optimized/fudan-xianghui.jpg",
+    image: "/hero-universities/optimized/fudan-xianghui.webp",
     className: "landing-card-fudan",
     depthX: 0.12,
     depthY: -0.1
@@ -30,7 +30,7 @@ const heroCards = [
     id: "sysu",
     name: "中山大学",
     city: "广州",
-    image: "/hero-universities/optimized/sysu-library.jpg",
+    image: "/hero-universities/optimized/sysu-library.webp",
     className: "landing-card-sysu",
     depthX: 0.08,
     depthY: 0.08
@@ -39,7 +39,7 @@ const heroCards = [
     id: "pku",
     name: "北京大学",
     city: "北京",
-    image: "/hero-universities/optimized/pku-hall.jpg",
+    image: "/hero-universities/optimized/pku-hall.webp",
     className: "landing-card-pku",
     depthX: -0.14,
     depthY: 0.15
@@ -48,7 +48,7 @@ const heroCards = [
     id: "whu",
     name: "武汉大学",
     city: "武汉",
-    image: "/hero-universities/optimized/whu-aerial.jpg",
+    image: "/hero-universities/optimized/whu-aerial.webp",
     className: "landing-card-whu",
     depthX: -0.18,
     depthY: -0.18
@@ -57,7 +57,7 @@ const heroCards = [
     id: "shuimu",
     name: "清华大学",
     city: "北京",
-    image: "/hero-universities/optimized/tsinghua-shuimu.jpg",
+    image: "/hero-universities/optimized/tsinghua-shuimu.webp",
     className: "landing-card-shuimu",
     depthX: 0.16,
     depthY: -0.08
@@ -67,54 +67,54 @@ const heroCards = [
 const ambientCards = [
   {
     id: "ambient-1",
-    image: "/hero-universities/optimized/sysu-campus.jpg",
+    image: "/hero-universities/optimized/sysu-campus.webp",
     className: "landing-ambient-card landing-ambient-card-a"
   },
   {
     id: "ambient-2",
-    image: "/hero-universities/optimized/pku-hall.jpg",
+    image: "/hero-universities/optimized/pku-hall.webp",
     className: "landing-ambient-card landing-ambient-card-b"
   },
   {
     id: "ambient-3",
-    image: "/hero-universities/optimized/fudan-aerial.jpg",
+    image: "/hero-universities/optimized/fudan-aerial.webp",
     className: "landing-ambient-card landing-ambient-card-c"
   },
   {
     id: "ambient-4",
-    image: "/hero-universities/optimized/whu-aerial.jpg",
+    image: "/hero-universities/optimized/whu-aerial.webp",
     className: "landing-ambient-card landing-ambient-card-d"
   },
   {
     id: "ambient-5",
-    image: "/hero-universities/optimized/tsinghua-shuimu.jpg",
+    image: "/hero-universities/optimized/tsinghua-shuimu.webp",
     className: "landing-ambient-card landing-ambient-card-e"
   },
   {
     id: "ambient-6",
-    image: "/hero-universities/optimized/sysu-library.jpg",
+    image: "/hero-universities/optimized/sysu-library.webp",
     className: "landing-ambient-card landing-ambient-card-f"
   },
   {
     id: "ambient-7",
-    image: "/hero-universities/optimized/pku-hall.jpg",
+    image: "/hero-universities/optimized/pku-hall.webp",
     className: "landing-ambient-card landing-ambient-card-g"
   },
   {
     id: "ambient-8",
-    image: "/hero-universities/optimized/fudan-xianghui.jpg",
+    image: "/hero-universities/optimized/fudan-xianghui.webp",
     className: "landing-ambient-card landing-ambient-card-h"
   }
 ];
 
 const trailImages = [
-  "/hero-universities/optimized/tsinghua-shuimu.jpg",
-  "/hero-universities/optimized/pku-hall.jpg",
-  "/hero-universities/optimized/fudan-aerial.jpg",
-  "/hero-universities/optimized/sysu-campus.jpg",
-  "/hero-universities/optimized/whu-aerial.jpg",
-  "/hero-universities/optimized/fudan-xianghui.jpg",
-  "/hero-universities/optimized/sysu-library.jpg"
+  "/hero-universities/optimized/tsinghua-shuimu.webp",
+  "/hero-universities/optimized/pku-hall.webp",
+  "/hero-universities/optimized/fudan-aerial.webp",
+  "/hero-universities/optimized/sysu-campus.webp",
+  "/hero-universities/optimized/whu-aerial.webp",
+  "/hero-universities/optimized/fudan-xianghui.webp",
+  "/hero-universities/optimized/sysu-library.webp"
 ];
 
 const stats = [

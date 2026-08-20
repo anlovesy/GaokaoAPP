@@ -59,7 +59,11 @@ import {
   updateUserPassword,
   updateUserRole
 } from "./services/dbService.js";
-import { importAllCsvFiles, saveImportFile } from "./services/importService.js";
+import {
+  assertDatasetTypeMatchesFileName,
+  importCsvFile,
+  saveImportFile
+} from "./services/importService.js";
 import { generateAdvisorReply, listAvailableProviders } from "./services/llmService.js";
 import { generateVolunteerPlan } from "./services/plannerService.js";
 import { ROLES } from "../shared/rbac.js";
@@ -710,14 +714,14 @@ app.post("/api/admin/upload", (request, response) => {
     const auth = requireAdminContext(request, response, { allowRefresh: true });
     assertApiPermission(auth.user, PERMISSIONS.api.IMPORT_UPLOAD, "没有导入数据的权限");
     const payload = uploadSchema.parse(request.body);
+    assertDatasetTypeMatchesFileName(payload.fileName, payload.datasetType);
     const savedPath = saveImportFile(payload.fileName, payload.content);
-    const result = importAllCsvFiles();
-    const rowCount =
-      payload.datasetType === "province_score_rank"
-        ? result.provinceScoreRankCount
-        : payload.datasetType === "enrollment_plan"
-          ? result.enrollmentPlanCount
-          : result.universityMajorLineCount;
+    const result = importCsvFile({
+      filePath: savedPath,
+      fileName: payload.fileName,
+      datasetType: payload.datasetType
+    });
+    const rowCount = Number(result.insertedRows || 0);
 
     saveImportHistory({
       userId: auth.user.id,
@@ -731,7 +735,7 @@ app.post("/api/admin/upload", (request, response) => {
       data: {
         savedPath,
         importResult: result,
-        importedDatasetType: payload.datasetType,
+        importedDatasetType: result.importedDatasetType,
         importedRowCount: rowCount
       }
     });
@@ -740,8 +744,33 @@ app.post("/api/admin/upload", (request, response) => {
   }
 });
 
+function setStaticCacheHeaders(response, filePath) {
+  const relativePath = path.relative(distDir, filePath).replaceAll(path.sep, "/");
+
+  if (relativePath === "index.html" || relativePath.endsWith(".html")) {
+    response.setHeader("Cache-Control", "no-cache, must-revalidate");
+    return;
+  }
+
+  if (relativePath.startsWith("assets/")) {
+    response.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+    return;
+  }
+
+  if (
+    relativePath.startsWith("universities/") ||
+    relativePath.startsWith("hero-universities/") ||
+    relativePath.startsWith("brand/")
+  ) {
+    response.setHeader(
+      "Cache-Control",
+      "public, max-age=604800, stale-while-revalidate=86400"
+    );
+  }
+}
+
 if (fs.existsSync(distDir)) {
-  app.use(express.static(distDir));
+  app.use(express.static(distDir, { setHeaders: setStaticCacheHeaders }));
 
   app.use((request, response, next) => {
     if (request.path.startsWith("/api") || request.method !== "GET") {
@@ -749,7 +778,9 @@ if (fs.existsSync(distDir)) {
       return;
     }
 
-    response.sendFile(distIndexHtml);
+    response.sendFile(distIndexHtml, {
+      headers: { "Cache-Control": "no-cache, must-revalidate" }
+    });
   });
 } else {
   app.get("/", (_request, response) => {

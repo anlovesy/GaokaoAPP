@@ -57,7 +57,7 @@ export default [
   {
     files: [
       "apps/api/**/*.js",
-      "scripts/**/*.js",
+      "scripts/**/*.{js,mjs}",
       "apps/web/vite.config.js",
       "eslint.config.js",
       "playwright.config.js"

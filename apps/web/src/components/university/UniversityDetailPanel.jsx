@@ -200,6 +200,7 @@ export function UniversityDetailPanel({
             src={universityImage}
             alt={`${university.university} 校园图片`}
             loading="lazy"
+            decoding="async"
             whileHover={prefersReducedMotion ? undefined : { scale: 1.025 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           />

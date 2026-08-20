@@ -4,18 +4,24 @@ const PC_WIDTHS = [1920, 1728, 1600, 1536, 1440, 1366, 1280];
 
 async function enterGuestWorkspace(page) {
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "游客体验" })).toBeVisible();
-  await page.getByRole("button", { name: "游客体验" }).click();
-  await expect(page).toHaveURL(/\/workspace$/);
+  await expect(page.locator(".landing-enter-btn")).toBeVisible();
+  await page.locator(".landing-enter-btn").click();
+  await expect(page).toHaveURL(/\/login$/);
+
+  await expect(page.locator(".auth-panel-actions button").first()).toBeVisible();
+  await page.locator(".auth-panel-actions button").first().click();
+  await expect(page).toHaveURL(/\/navigation$/);
 }
 
 async function generateGuestPlan(page) {
   await enterGuestWorkspace(page);
-  const generateButton = page.getByRole("button", { name: /生成/ });
-  await expect(generateButton).toBeVisible();
-  await generateButton.click();
-  await expect(page.locator(".workspace-focus-copy h4")).toBeVisible({ timeout: 30000 });
-  await expect(page.locator(".university-editorial-hero img")).toBeVisible();
+  const continueButton = page.locator(".navigation-continue-btn");
+  await expect(continueButton).toBeVisible();
+  await expect(continueButton).toBeEnabled();
+  await continueButton.click();
+  await expect(page).toHaveURL(/\/workspace$/);
+  await expect(page.locator(".decision-hero-copy h1")).toBeVisible({ timeout: 30000 });
+  await expect(page.locator(".decision-shelf-media img").first()).toBeVisible();
 }
 
 test("landing and login routes load without horizontal overflow", async ({ page }) => {
@@ -31,6 +37,24 @@ test("landing and login routes load without horizontal overflow", async ({ page 
   }
 });
 
+test("official enrollment plans expose concrete majors and tuition", async ({ request }) => {
+  const response = await request.get(
+    "/api/data/plans?provinceCode=GD&year=2026&trackType=physics&keyword=%E5%8D%8E%E5%8D%97%E7%90%86%E5%B7%A5%E5%A4%A7%E5%AD%A6&limit=60"
+  );
+  expect(response.ok()).toBeTruthy();
+
+  const payload = await response.json();
+  const items = payload.data?.items || [];
+
+  expect(items.length).toBeGreaterThanOrEqual(20);
+  expect(items.every((item) => item.plan_source_type === "official_csv")).toBeTruthy();
+  expect(items.every((item) => Number(item.plan_count) > 0)).toBeTruthy();
+  expect(items.every((item) => Number(item.tuition_fee) > 0)).toBeTruthy();
+  expect(items.every((item) => !String(item.major_name || "").startsWith("专业组"))).toBeTruthy();
+  expect(items.some((item) => item.major_name === "软件工程")).toBeTruthy();
+  expect(items.some((item) => String(item.major_name || "").includes("工业设计"))).toBeTruthy();
+});
+
 test("workspace stays stable across PC breakpoints after plan generation", async ({ page }) => {
   await generateGuestPlan(page);
 
@@ -39,80 +63,87 @@ test("workspace stays stable across PC breakpoints after plan generation", async
     await page.waitForTimeout(150);
 
     const metrics = await page.evaluate(() => {
-      const detailImage = document.querySelector(".university-editorial-hero img");
-      const focusImage = document.querySelector(".workspace-focus-media img");
-      const admissionRow = document.querySelector(".editorial-admission-row");
+      const shelfImages = [...document.querySelectorAll(".decision-shelf-media img")];
+      const hero = document.querySelector(".decision-hero-copy h1");
+      const shelfCards = document.querySelectorAll(".decision-shelf-card");
 
       return {
         hasHorizontalOverflow: document.documentElement.scrollWidth > window.innerWidth + 1,
         bodyOverflowY: getComputedStyle(document.body).overflowY,
-        focusImageLoaded: Boolean(focusImage?.complete && focusImage?.naturalWidth > 0),
-        detailImageLoaded: Boolean(detailImage?.complete && detailImage?.naturalWidth > 0),
-        detailImageSrc: detailImage?.getAttribute("src") || "",
-        admissionCellCount: admissionRow?.children.length || 0
+        heroVisible: Boolean(hero),
+        shelfImagesLoaded: shelfImages.filter((image) => image.complete && image.naturalWidth > 0)
+          .length,
+        shelfCardCount: shelfCards.length
       };
     });
 
     expect(metrics.hasHorizontalOverflow).toBeFalsy();
     expect(metrics.bodyOverflowY).not.toBe("hidden");
-    expect(metrics.focusImageLoaded).toBeTruthy();
-    expect(metrics.detailImageLoaded).toBeTruthy();
-    expect(metrics.detailImageSrc).toContain("/universities/");
-    expect(metrics.admissionCellCount).toBeGreaterThanOrEqual(3);
+    expect(metrics.heroVisible).toBeTruthy();
+    expect(metrics.shelfImagesLoaded).toBeGreaterThanOrEqual(3);
+    expect(metrics.shelfCardCount).toBeGreaterThanOrEqual(3);
   }
 });
 
 test("switching schools updates local image binding", async ({ page }) => {
   await generateGuestPlan(page);
 
-  const schoolRows = page.locator(".workspace-tier-row");
-  await expect(schoolRows.first()).toBeVisible();
-  const rowCount = await schoolRows.count();
+  const schoolCards = page.locator(".decision-shelf-card");
+  await expect(schoolCards.first()).toBeVisible();
+  const rowCount = await schoolCards.count();
   expect(rowCount).toBeGreaterThan(1);
 
-  const initialSrc = await page.locator(".university-editorial-hero img").getAttribute("src");
-  await schoolRows.nth(1).hover();
+  const initialSrc = await page.locator(".decision-shelf-media img").first().getAttribute("src");
+  await schoolCards.nth(1).click();
+  await expect(page).toHaveURL(/\/university$/);
 
   await expect
-    .poll(async () => page.locator(".university-editorial-hero img").getAttribute("src"))
+    .poll(async () => page.locator(".university-dossier-media img").getAttribute("src"))
     .not.toBe(initialSrc);
 });
 
 test("advisor uses independent scroll layout on PC", async ({ page }) => {
   await generateGuestPlan(page);
-  await page.getByRole("button", { name: "全屏打开" }).click();
+  await page.locator(".decision-open-button").click();
   await expect(page).toHaveURL(/\/advisor$/);
-  await expect(page.locator(".advisor-chat-stage")).toBeVisible();
+  await expect(page.locator(".advisor-conversation-panel")).toBeVisible();
+  await expect(page.locator(".advisor-input-dock")).toBeVisible();
 
   const metrics = await page.evaluate(() => {
     const body = document.body;
-    const shell = document.querySelector(".advisor-workbench-shell");
-    const rail = document.querySelector(".advisor-mode-rail");
-    const stage = document.querySelector(".advisor-conversation-stage");
-    const chat = document.querySelector(".advisor-chat-stage");
-    const input = document.querySelector(".advisor-input-stage");
-    const stageRect = stage?.getBoundingClientRect();
-    const inputRect = input?.getBoundingClientRect();
+    const shell = document.querySelector(".advisor-os-shell");
+    const conversation = document.querySelector(".advisor-conversation-panel");
+    const input = document.querySelector(".advisor-input-dock");
 
     return {
       bodyOverflowY: getComputedStyle(body).overflowY,
       pageCanScroll: document.documentElement.scrollHeight > window.innerHeight,
       shellOverflowY: shell ? getComputedStyle(shell).overflowY : null,
-      railOverflowY: rail ? getComputedStyle(rail).overflowY : null,
-      stageOverflowY: stage ? getComputedStyle(stage).overflowY : null,
-      chatOverflowY: chat ? getComputedStyle(chat).overflowY : null,
-      chatClientHeight: chat?.clientHeight || 0,
-      inputBottomGap:
-        stageRect && inputRect ? Math.round(stageRect.bottom - inputRect.bottom) : Number.NaN
+      conversationOverflowY: conversation ? getComputedStyle(conversation).overflowY : null,
+      conversationClientHeight: conversation?.clientHeight || 0,
+      inputPosition: input ? getComputedStyle(input).position : null
     };
   });
 
   expect(metrics.bodyOverflowY).not.toBe("hidden");
-  expect(metrics.pageCanScroll).toBeFalsy();
+  expect(metrics.pageCanScroll).toBeTruthy();
   expect(metrics.shellOverflowY).toBe("hidden");
-  expect(metrics.railOverflowY).toBe("auto");
-  expect(metrics.stageOverflowY).toBe("hidden");
-  expect(metrics.chatOverflowY).toBe("auto");
-  expect(metrics.chatClientHeight).toBeGreaterThan(0);
-  expect(metrics.inputBottomGap).toBeGreaterThanOrEqual(0);
+  expect(metrics.conversationOverflowY).toBe("hidden");
+  expect(metrics.conversationClientHeight).toBeGreaterThan(0);
+  expect(metrics.inputPosition).toBe("sticky");
+});
+
+test("guest flow remains usable on mobile without horizontal overflow", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await generateGuestPlan(page);
+
+  const metrics = await page.evaluate(() => ({
+    hasHorizontalOverflow: document.documentElement.scrollWidth > window.innerWidth + 1,
+    bodyOverflowY: getComputedStyle(document.body).overflowY,
+    hasWorkspaceContent: Boolean(document.querySelector(".decision-hero-copy h1"))
+  }));
+
+  expect(metrics.hasHorizontalOverflow).toBeFalsy();
+  expect(metrics.bodyOverflowY).not.toBe("hidden");
+  expect(metrics.hasWorkspaceContent).toBeTruthy();
 });

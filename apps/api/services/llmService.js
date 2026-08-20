@@ -46,9 +46,23 @@ export function listAvailableProviders() {
 }
 
 export async function generateStructuredPlanningSummary({ preferredProvider = "auto", input }) {
+  const requestedProvider =
+    preferredProvider && preferredProvider !== "auto" && preferredProvider !== "local"
+      ? providerCatalog[preferredProvider]
+      : null;
   const providerId = resolveProviderId(preferredProvider);
   if (!providerId) {
-    return null;
+    return {
+      summary: null,
+      providerStatus: requestedProvider
+        ? {
+            status: "unavailable",
+            provider: requestedProvider.id,
+            model: getProviderModel(requestedProvider.id),
+            code: "PROVIDER_NOT_CONFIGURED"
+          }
+        : { status: "local", provider: "local-fallback", code: "LOCAL_MODE" }
+    };
   }
 
   const schemaPrompt = `
@@ -71,21 +85,35 @@ export async function generateStructuredPlanningSummary({ preferredProvider = "a
 ${JSON.stringify(input, null, 2)}
 `;
 
-  const text = await invokeProvider({
+  const providerResult = await invokeProviderSafe({
     providerId,
     systemPrompt: "你是一名高考志愿规划顾问，只能输出 JSON。",
     userPrompt: schemaPrompt,
     jsonMode: true
   });
+  const text = providerResult.text;
 
   if (!text) {
-    return null;
+    return {
+      summary: null,
+      providerStatus: providerResult.status
+    };
   }
 
   try {
-    return JSON.parse(text);
+    return {
+      summary: JSON.parse(text),
+      providerStatus: providerResult.status
+    };
   } catch {
-    return null;
+    return {
+      summary: null,
+      providerStatus: {
+        ...providerResult.status,
+        status: "failed",
+        code: "INVALID_PROVIDER_JSON"
+      }
+    };
   }
 }
 
@@ -110,6 +138,10 @@ export async function generateAdvisorReply({
   const providerChoice =
     preferredProvider && preferredProvider !== "auto" ? preferredProvider : provider;
   const providerId = resolveProviderId(providerChoice || "auto");
+  const requestedProvider =
+    providerChoice && providerChoice !== "auto" && providerChoice !== "local"
+      ? providerCatalog[providerChoice]
+      : null;
 
   if (!providerId) {
     const currentUserMessage =
@@ -156,6 +188,14 @@ export async function generateAdvisorReply({
     return {
       provider: "local",
       model: "local-fallback",
+      providerStatus: requestedProvider
+        ? {
+            status: "unavailable",
+            provider: requestedProvider.id,
+            model: getProviderModel(requestedProvider.id),
+            code: "PROVIDER_NOT_CONFIGURED"
+          }
+        : { status: "local", provider: "local-fallback", code: "LOCAL_MODE" },
       reply:
         (preferDynamicFollowUp
           ? dynamicFollowUpReply ||
@@ -242,12 +282,13 @@ ${JSON.stringify(recentMessages, null, 2)}`;
     currentUserMessage,
     recentMessages
   });
-  const reply = await invokeProvider({
+  const providerResult = await invokeProviderSafe({
     providerId,
     systemPrompt,
     userPrompt: finalUserPrompt || userPrompt,
     jsonMode: false
   });
+  const reply = providerResult.text;
   const processedReply = postProcessProviderReply({
     reply,
     advisorMode,
@@ -289,6 +330,7 @@ ${JSON.stringify(recentMessages, null, 2)}`;
   return {
     provider: providerId,
     model: getProviderModel(providerId),
+    providerStatus: providerResult.status,
     reply:
       safeReply ||
       (preferDynamicFollowUp
@@ -350,7 +392,7 @@ function createClient(providerId) {
 async function invokeProvider({ providerId, systemPrompt, userPrompt, jsonMode }) {
   const client = createClient(providerId);
   if (!client) {
-    return null;
+    throw createProviderError(providerId, "PROVIDER_NOT_CONFIGURED", "Provider is not configured");
   }
 
   const provider = providerCatalog[providerId];
@@ -377,9 +419,69 @@ async function invokeProvider({ providerId, systemPrompt, userPrompt, jsonMode }
     });
 
     return completion.choices?.[0]?.message?.content?.trim() || null;
-  } catch {
-    return null;
+  } catch (error) {
+    throw createProviderError(providerId, classifyProviderError(error), error?.message, error);
   }
+}
+
+async function invokeProviderSafe(args) {
+  try {
+    const text = await invokeProvider(args);
+    return {
+      text,
+      status: {
+        status: text ? "ok" : "empty",
+        provider: args.providerId,
+        model: getProviderModel(args.providerId),
+        code: text ? "OK" : "EMPTY_PROVIDER_RESPONSE"
+      }
+    };
+  } catch (error) {
+    console.warn(
+      `[llm] provider failure provider=${args.providerId} code=${error.code || "PROVIDER_REQUEST_FAILED"}`
+    );
+    return {
+      text: null,
+      status: {
+        status: "failed",
+        provider: args.providerId,
+        model: getProviderModel(args.providerId),
+        code: error.code || "PROVIDER_REQUEST_FAILED",
+        message: getProviderStatusMessage(error.code || "PROVIDER_REQUEST_FAILED")
+      }
+    };
+  }
+}
+
+function getProviderStatusMessage(code) {
+  const messages = {
+    PROVIDER_NOT_CONFIGURED: "Provider is not configured",
+    PROVIDER_AUTH_FAILED: "Provider authentication failed",
+    PROVIDER_RATE_LIMITED: "Provider rate limit reached",
+    PROVIDER_UPSTREAM_ERROR: "Provider upstream service failed",
+    PROVIDER_NETWORK_ERROR: "Provider network request failed",
+    PROVIDER_REQUEST_FAILED: "Provider request failed"
+  };
+
+  return messages[code] || "Provider request failed";
+}
+
+function createProviderError(providerId, code, message, cause) {
+  const error = new Error(message || "Provider request failed", { cause });
+  error.provider = providerId;
+  error.code = code;
+  return error;
+}
+
+function classifyProviderError(error) {
+  const status = Number(error?.status || error?.response?.status || 0);
+  if (status === 401 || status === 403) return "PROVIDER_AUTH_FAILED";
+  if (status === 429) return "PROVIDER_RATE_LIMITED";
+  if (status >= 500) return "PROVIDER_UPSTREAM_ERROR";
+  if (["ETIMEDOUT", "ECONNRESET", "ENOTFOUND"].includes(error?.code)) {
+    return "PROVIDER_NETWORK_ERROR";
+  }
+  return "PROVIDER_REQUEST_FAILED";
 }
 
 function buildLocalChatReply(messages, planningContext, advisorMode = "xuefeng") {
@@ -814,7 +916,7 @@ function buildStructuredFallbackReply({
   responsePolicy = null,
   contextPacket = null,
   intentResult = null,
-  executionPlan = null,
+  _executionPlan = null,
   toolExecution = null,
   memorySnapshot = null
 }) {

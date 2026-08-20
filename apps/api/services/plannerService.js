@@ -14,6 +14,10 @@ import {
 } from "./dataService.js";
 import { getDataEngine } from "./dbService.js";
 import { generateStructuredPlanningSummary } from "./llmService.js";
+import {
+  denormalizeProvinceName,
+  normalizeProvinceCode
+} from "../modules/data-engine/provinceCatalog.js";
 
 const MAJOR_DIRECTION_ALIAS = [
   {
@@ -164,6 +168,7 @@ export async function generateVolunteerPlan(profile) {
       topRecommendations: recommendationPool.slice(0, 8)
     }
   });
+  const aiSummaryData = aiSummary?.summary || null;
 
   return {
     profile: {
@@ -179,17 +184,22 @@ export async function generateVolunteerPlan(profile) {
       englishScore: normalizedProfile.englishScore
     },
     summary: {
-      overview: aiSummary?.overview || localSummary.overview,
-      strategy: aiSummary?.strategy || localSummary.strategy,
-      careerAdvice: aiSummary?.careerAdvice || localSummary.careerAdvice
+      overview: aiSummaryData?.overview || localSummary.overview,
+      strategy: aiSummaryData?.strategy || localSummary.strategy,
+      careerAdvice: aiSummaryData?.careerAdvice || localSummary.careerAdvice
     },
     diagnosis: profileDiagnosis,
     majorDirections: matchedDirections.slice(0, 6),
     applicationPlan,
     backupOptions,
-    riskAlerts: aiSummary?.riskAlerts || localSummary.riskAlerts,
+    riskAlerts: aiSummaryData?.riskAlerts || localSummary.riskAlerts,
     meta: {
-      analysisMode: aiSummary ? "llm" : "local",
+      analysisMode: aiSummaryData ? "llm" : "local",
+      providerStatus: aiSummary?.providerStatus || {
+        status: "local",
+        provider: "local-fallback",
+        code: "LOCAL_MODE"
+      },
       dataSource: resolvePlannerDataSource(normalizedProfile, generatedData),
       latestProvinceYear: getLatestProvinceYear(
         generatedData,
@@ -3812,6 +3822,10 @@ function parsePlannerJsonArray(value) {
 }
 
 function normalizePlannerProvinceCode(value) {
+  return normalizeProvinceCode(value);
+}
+
+function _legacyNormalizePlannerProvinceCode(value) {
   const normalized = String(value || "").trim();
 
   if (normalized === "\u5e7f\u4e1c" || normalized === "骞夸笢") {
@@ -3836,6 +3850,10 @@ function normalizePlannerTrackType(value) {
 }
 
 function denormalizePlannerProvinceCode(value) {
+  return denormalizeProvinceName(value);
+}
+
+function _legacyDenormalizePlannerProvinceCode(value) {
   if (value === "GD") {
     return "广东";
   }

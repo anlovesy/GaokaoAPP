@@ -496,7 +496,7 @@ export function PlanPanel({
             >
               <span className="workspace-plan-card-tier">{school.tierLabel}</span>
               <div className="workspace-plan-card-media">
-                <img src={school.image} alt={school.university} loading="lazy" />
+                <img src={school.image} alt={school.university} loading="lazy" decoding="async" />
               </div>
               <div className="workspace-plan-card-copy">
                 <strong>{school.university}</strong>
@@ -530,7 +530,7 @@ export function PlanPanel({
             transition={{ ...transitionGentle, delay: 0.04 }}
           >
             <div className="workspace-focus-media">
-              <img src={activeUniversityImage} alt={activeUniversity.university} loading="lazy" />
+              <img src={activeUniversityImage} alt={activeUniversity.university} loading="lazy" decoding="async" />
             </div>
             <div className="workspace-focus-copy">
               <span className="brand-kicker">Current Focus</span>

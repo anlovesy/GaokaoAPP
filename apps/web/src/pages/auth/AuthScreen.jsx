@@ -11,7 +11,7 @@ const zhixuAssets = {
 const authMediaItems = [
   {
     id: "tsinghua-gate",
-    image: "/hero-universities/optimized/tsinghua-gate.jpg",
+    image: "/hero-universities/optimized/tsinghua-gate.webp",
     school: "清华大学",
     top: "-3%",
     left: "2%",
@@ -29,7 +29,7 @@ const authMediaItems = [
   },
   {
     id: "pku-hall",
-    image: "/hero-universities/optimized/pku-hall.jpg",
+    image: "/hero-universities/optimized/pku-hall.webp",
     school: "北京大学",
     top: "5%",
     right: "7%",
@@ -47,7 +47,7 @@ const authMediaItems = [
   },
   {
     id: "fudan-aerial",
-    image: "/hero-universities/optimized/fudan-aerial.jpg",
+    image: "/hero-universities/optimized/fudan-aerial.webp",
     school: "复旦大学",
     top: "34%",
     left: "-1%",
@@ -65,7 +65,7 @@ const authMediaItems = [
   },
   {
     id: "tsinghua-shuimu",
-    image: "/hero-universities/optimized/tsinghua-shuimu.jpg",
+    image: "/hero-universities/optimized/tsinghua-shuimu.webp",
     school: "清华大学",
     top: "22%",
     right: "24%",
@@ -83,7 +83,7 @@ const authMediaItems = [
   },
   {
     id: "whu-aerial",
-    image: "/hero-universities/optimized/whu-aerial.jpg",
+    image: "/hero-universities/optimized/whu-aerial.webp",
     school: "武汉大学",
     bottom: "8%",
     left: "12%",
@@ -101,7 +101,7 @@ const authMediaItems = [
   },
   {
     id: "sysu-campus",
-    image: "/hero-universities/optimized/sysu-campus.jpg",
+    image: "/hero-universities/optimized/sysu-campus.webp",
     school: "中山大学",
     bottom: "2%",
     right: "2%",
