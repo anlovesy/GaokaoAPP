@@ -4,14 +4,24 @@ import {
   pickUniversityKeyword,
   resolveRankWindow
 } from "./advisorScope.js";
+import {
+  LEGACY_TO_TYPED_TOOL_NAME,
+  buildAdvisorToolInput,
+  createAdvisorToolDefinitions,
+  toLegacyToolResult
+} from "./advisorToolDefinitions.js";
+import { createToolExecutor } from "./ToolExecutor.js";
+import { createToolRegistry } from "./ToolRegistry.js";
 
 export class AdvisorToolRouter {
-  constructor({ entityResolver, getDataEngine }) {
+  constructor({ entityResolver, getDataEngine, registry = null, toolExecutor = null }) {
     this.entityResolver = entityResolver;
     this.getDataEngine = getDataEngine;
+    this.registry = registry || createToolRegistry(createAdvisorToolDefinitions());
+    this.toolExecutor = toolExecutor || createToolExecutor({ registry: this.registry });
   }
 
-  execute({
+  async execute({
     executionPlan = null,
     contextPacket = null,
     memorySnapshot = null,
@@ -25,23 +35,42 @@ export class AdvisorToolRouter {
     const evidence = {};
     const citations = [];
 
-    for (const toolName of executionPlan?.plannedTools || []) {
-      const result = executeSingleTool({
-        router: this,
-        toolName,
+    for (const legacyToolName of executionPlan?.plannedTools || []) {
+      const typedToolName = LEGACY_TO_TYPED_TOOL_NAME[legacyToolName];
+      if (!typedToolName) {
+        continue;
+      }
+
+      const tool = this.registry.get(typedToolName);
+      const input = buildAdvisorToolInput({
+        legacyName: legacyToolName,
         scope,
         entities,
         contextPacket,
         memorySnapshot,
         intentKey: executionPlan?.primaryIntent || "general_follow_up"
       });
+      const internalResult = await this.toolExecutor.execute({
+        toolName: typedToolName,
+        input,
+        executionContext: {
+          permissions: [],
+          executeLegacyTool: ({ legacyName, input: validatedInput }) =>
+            executeLegacyTool({
+              router: this,
+              legacyName,
+              input: validatedInput
+            })
+        }
+      });
+      const result = toLegacyToolResult(internalResult, tool);
 
       if (!result) {
         continue;
       }
 
       invocations.push({
-        toolName,
+        toolName: legacyToolName,
         ok: result.ok,
         itemCount: result.itemCount || 0
       });
@@ -68,35 +97,126 @@ export function createAdvisorToolRouter(dependencies) {
   return new AdvisorToolRouter(dependencies);
 }
 
-function executeSingleTool({
-  router,
-  toolName,
-  scope,
-  entities,
-  contextPacket,
-  memorySnapshot,
-  intentKey
-}) {
-  switch (toolName) {
-    case "workspace_data":
-      return buildWorkspaceDataEvidence({ contextPacket, entities, memorySnapshot });
-    case "admission_database":
-      return buildAdmissionEvidence({ router, scope, entities, intentKey });
-    case "enrollment_plan_database":
-      return buildEnrollmentPlanEvidence({ router, scope, entities, memorySnapshot });
-    case "university_database":
-      return buildUniversityEvidence({ router, scope, entities });
-    case "major_database":
-      return buildMajorEvidence({ router, scope, entities, memorySnapshot });
-    case "policy_database":
-      return buildPolicyEvidence({ router, scope, entities });
-    case "employment_database":
-      return buildEmploymentEvidence({ router, scope, entities, memorySnapshot });
-    case "knowledge_base":
-      return buildKnowledgeBaseEvidence({ contextPacket, memorySnapshot });
-    default:
-      return null;
+function executeLegacyTool({ router, legacyName, input }) {
+  const executor = legacyToolExecutors[legacyName];
+  if (!executor) {
+    throw new Error(`Unknown legacy advisor tool: ${legacyName}`);
   }
+
+  return executor({ router, input });
+}
+
+const legacyToolExecutors = {
+  workspace_data({ input }) {
+    return buildWorkspaceDataEvidence({
+      contextPacket: {
+        profile: input.profile,
+        workspace: input.workspace
+      },
+      entities: input.resolvedEntities,
+      memorySnapshot: {
+        workspace: { strategy: input.strategySummary },
+        conversationSummary: input.conversationSummary
+      }
+    });
+  },
+  admission_database({ router, input }) {
+    return buildAdmissionEvidence({
+      router,
+      scope: toQueryScope(input),
+      entities: toEntityContext(input),
+      intentKey: input.intentKey
+    });
+  },
+  enrollment_plan_database({ router, input }) {
+    return buildEnrollmentPlanEvidence({
+      router,
+      scope: toQueryScope(input),
+      entities: toEntityContext(input),
+      memorySnapshot: null,
+      keywordOverride: input.keyword
+    });
+  },
+  university_database({ router, input }) {
+    return buildUniversityEvidence({
+      router,
+      scope: toQueryScope(input),
+      entities: toEntityContext(input),
+      keywordOverride: input.keyword
+    });
+  },
+  major_database({ router, input }) {
+    return buildMajorEvidence({
+      router,
+      scope: toMajorQueryScope(input),
+      entities: toEntityContext(input),
+      memorySnapshot: null,
+      keywordOverride: input.keyword
+    });
+  },
+  policy_database({ router, input }) {
+    return buildPolicyEvidence({
+      router,
+      scope: {
+        provinceCode: input.provinceCode,
+        province: input.province,
+        year: input.year
+      },
+      entities: { policyTopics: input.topics }
+    });
+  },
+  employment_database({ router, input }) {
+    return buildEmploymentEvidence({
+      router,
+      scope: toMajorQueryScope(input),
+      entities: toEntityContext(input),
+      memorySnapshot: null,
+      keywordOverride: input.keyword
+    });
+  },
+  knowledge_base({ input }) {
+    return buildKnowledgeBaseEvidence({
+      contextPacket: {
+        workspace: {
+          summary: {
+            strategy: input.strategy,
+            overview: input.overview,
+            careerAdvice: input.careerAdvice
+          },
+          diagnosis: { topDirections: input.topDirections }
+        }
+      },
+      memorySnapshot: null
+    });
+  }
+};
+
+function toQueryScope(input) {
+  return {
+    provinceCode: input.provinceCode,
+    trackType: input.trackType,
+    year: input.year,
+    rank: Number(input.rank || 0)
+  };
+}
+
+function toMajorQueryScope(input) {
+  return {
+    ...toQueryScope(input),
+    workspaceAnchors: {
+      universities: input.workspaceUniversityAnchors || [],
+      majors: []
+    }
+  };
+}
+
+function toEntityContext(input) {
+  return {
+    comparison: input.comparison || createEmptyComparison(),
+    primaryUniversity: input.primaryUniversity || null,
+    primaryMajor: input.primaryMajor || null,
+    universities: input.universityCandidates || []
+  };
 }
 
 function buildWorkspaceDataEvidence({ contextPacket, entities, memorySnapshot }) {
@@ -222,7 +342,13 @@ function buildAdmissionEvidence({ router, scope, entities, intentKey }) {
   };
 }
 
-function buildEnrollmentPlanEvidence({ router, scope, entities, memorySnapshot }) {
+function buildEnrollmentPlanEvidence({
+  router,
+  scope,
+  entities,
+  memorySnapshot,
+  keywordOverride = ""
+}) {
   if (!scope.provinceCode || !scope.trackType || !scope.year) {
     return skippedResult("planEvidence");
   }
@@ -244,6 +370,7 @@ function buildEnrollmentPlanEvidence({ router, scope, entities, memorySnapshot }
     );
   } else {
     const keyword =
+      keywordOverride ||
       entities?.primaryUniversity?.name ||
       entities?.primaryMajor?.name ||
       pickUniversityKeyword(scope) ||
@@ -292,7 +419,7 @@ function buildEnrollmentPlanEvidence({ router, scope, entities, memorySnapshot }
   };
 }
 
-function buildUniversityEvidence({ router, scope, entities }) {
+function buildUniversityEvidence({ router, scope, entities, keywordOverride = "" }) {
   const engine = router.getDataEngine();
   const comparison = entities?.comparison || createEmptyComparison();
 
@@ -325,7 +452,7 @@ function buildUniversityEvidence({ router, scope, entities }) {
   const target =
     entities?.primaryUniversity ||
     engine.services.universityQuery.searchUniversities({
-      keyword: pickUniversityKeyword(scope),
+      keyword: keywordOverride || pickUniversityKeyword(scope),
       provinceCode: scope.provinceCode,
       limit: 3
     })[0];
@@ -353,7 +480,7 @@ function buildUniversityEvidence({ router, scope, entities }) {
   };
 }
 
-function buildMajorEvidence({ router, scope, entities, memorySnapshot }) {
+function buildMajorEvidence({ router, scope, entities, memorySnapshot, keywordOverride = "" }) {
   const engine = router.getDataEngine();
   const comparison = entities?.comparison || createEmptyComparison();
   const comparisonSupport =
@@ -396,7 +523,7 @@ function buildMajorEvidence({ router, scope, entities, memorySnapshot }) {
   const target =
     entities?.primaryMajor ||
     engine.services.majorQuery.searchMajors({
-      keyword: pickMajorKeyword(scope, memorySnapshot),
+      keyword: keywordOverride || pickMajorKeyword(scope, memorySnapshot),
       limit: 3
     })[0];
 
@@ -474,8 +601,20 @@ function buildPolicyEvidence({ router, scope, entities }) {
   };
 }
 
-function buildEmploymentEvidence({ router, scope, entities, memorySnapshot }) {
-  const majorResult = buildMajorEvidence({ router, scope, entities, memorySnapshot });
+function buildEmploymentEvidence({
+  router,
+  scope,
+  entities,
+  memorySnapshot,
+  keywordOverride = ""
+}) {
+  const majorResult = buildMajorEvidence({
+    router,
+    scope,
+    entities,
+    memorySnapshot,
+    keywordOverride
+  });
   if (!majorResult?.ok || !majorResult?.payload) {
     return skippedResult("employmentEvidence");
   }

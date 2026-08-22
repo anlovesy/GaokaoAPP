@@ -78,7 +78,7 @@ export class AdvisorRuntime {
         })
       : null;
     const toolExecution = this.toolRouter
-      ? this.toolRouter.execute({
+      ? await this.toolRouter.execute({
           executionPlan,
           contextPacket,
           memorySnapshot,

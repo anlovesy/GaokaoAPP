@@ -10,4 +10,21 @@ export { createAdvisorResponsePolicy } from "./response/AdvisorResponsePolicy.js
 export { createReflectionEngine } from "./reflection/ReflectionEngine.js";
 export { createEntityResolver } from "./tools/EntityResolver.js";
 export { createAdvisorToolRouter } from "./tools/AdvisorToolRouter.js";
+export {
+  TOOL_ERROR_CODES,
+  TOOL_STATUSES,
+  assertToolContract,
+  defineTool,
+  legacyToolOutputSchema,
+  toolCitationSchema,
+  toolResultSchema
+} from "./tools/ToolContract.js";
+export { ToolRegistry, createToolRegistry } from "./tools/ToolRegistry.js";
+export { ToolExecutor, createToolExecutor } from "./tools/ToolExecutor.js";
+export {
+  LEGACY_TO_TYPED_TOOL_NAME,
+  buildAdvisorToolInput,
+  createAdvisorToolDefinitions,
+  toLegacyToolResult
+} from "./tools/advisorToolDefinitions.js";
 export { createAdvisorRuntime } from "./runtime/createAdvisorRuntime.js";
