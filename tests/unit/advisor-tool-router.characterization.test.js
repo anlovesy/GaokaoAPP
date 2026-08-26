@@ -142,7 +142,7 @@ function createDataEngineStub() {
   };
 }
 
-function createRouter() {
+function createRouter({ selectModelTool = null, modelToolSelectionEnabled = false } = {}) {
   const dataEngine = createDataEngineStub();
   return createAdvisorToolRouter({
     entityResolver: {
@@ -152,7 +152,9 @@ function createRouter() {
     },
     getDataEngine() {
       return dataEngine;
-    }
+    },
+    selectModelTool,
+    modelToolSelectionEnabled
   });
 }
 
@@ -288,4 +290,36 @@ test("characterizes AdvisorRuntime planned tools and response metadata", async (
   assert.ok(Array.isArray(result.meta.citations));
   assert.ok(result.meta.reflection);
   assert.equal(saved.length, 1);
+});
+
+test("model-selected invocation still executes through the legacy-compatible Router", async () => {
+  let modelCalls = 0;
+  const router = createRouter({
+    modelToolSelectionEnabled: true,
+    selectModelTool: async ({ selectionContext }) => {
+      modelCalls += 1;
+      return {
+        text: JSON.stringify({
+          tool: "query_admission_records",
+          input: selectionContext.canonicalInputs.query_admission_records,
+          reason: "Use admission evidence."
+        })
+      };
+    }
+  });
+  const result = await router.execute({
+    ...createExecutionInput("admission_database"),
+    executionPlan: {
+      primaryIntent: "school_recommendation",
+      plannedTools: ["workspace_data", "admission_database"]
+    }
+  });
+
+  assert.equal(modelCalls, 1);
+  assert.deepEqual(
+    result.invocations.map((item) => item.toolName),
+    ["admission_database"]
+  );
+  assert.ok(result.evidence.admissionEvidence);
+  assert.equal(result.invocations[0].ok, true);
 });

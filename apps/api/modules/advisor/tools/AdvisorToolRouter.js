@@ -4,21 +4,32 @@ import {
   pickUniversityKeyword,
   resolveRankWindow
 } from "./advisorScope.js";
-import {
-  LEGACY_TO_TYPED_TOOL_NAME,
-  buildAdvisorToolInput,
-  createAdvisorToolDefinitions,
-  toLegacyToolResult
-} from "./advisorToolDefinitions.js";
+import { createAdvisorInvocationPlanner } from "../planning/AdvisorInvocationPlanner.js";
+import { createAdvisorToolDefinitions, toLegacyToolResult } from "./advisorToolDefinitions.js";
 import { createToolExecutor } from "./ToolExecutor.js";
 import { createToolRegistry } from "./ToolRegistry.js";
 
 export class AdvisorToolRouter {
-  constructor({ entityResolver, getDataEngine, registry = null, toolExecutor = null }) {
+  constructor({
+    entityResolver,
+    getDataEngine,
+    registry = null,
+    toolExecutor = null,
+    invocationPlanner = null,
+    selectModelTool = null,
+    modelToolSelectionEnabled = false
+  }) {
     this.entityResolver = entityResolver;
     this.getDataEngine = getDataEngine;
     this.registry = registry || createToolRegistry(createAdvisorToolDefinitions());
     this.toolExecutor = toolExecutor || createToolExecutor({ registry: this.registry });
+    this.invocationPlanner =
+      invocationPlanner ||
+      createAdvisorInvocationPlanner({
+        registry: this.registry,
+        selectModelTool,
+        modelSelectionEnabled: modelToolSelectionEnabled
+      });
   }
 
   async execute({
@@ -34,25 +45,22 @@ export class AdvisorToolRouter {
     const invocations = [];
     const evidence = {};
     const citations = [];
+    const invocationPlan = await this.invocationPlanner.plan({
+      executionPlan,
+      scope,
+      entities,
+      contextPacket,
+      memorySnapshot,
+      preferredProvider: payload?.provider || "auto"
+    });
 
-    for (const legacyToolName of executionPlan?.plannedTools || []) {
-      const typedToolName = LEGACY_TO_TYPED_TOOL_NAME[legacyToolName];
-      if (!typedToolName) {
-        continue;
-      }
-
-      const tool = this.registry.get(typedToolName);
-      const input = buildAdvisorToolInput({
-        legacyName: legacyToolName,
-        scope,
-        entities,
-        contextPacket,
-        memorySnapshot,
-        intentKey: executionPlan?.primaryIntent || "general_follow_up"
-      });
+    for (const invocation of invocationPlan.invocations) {
+      const tool = this.registry.get(invocation.tool);
+      const legacyToolName = tool.metadata.legacyName;
       const internalResult = await this.toolExecutor.execute({
-        toolName: typedToolName,
-        input,
+        toolName: invocation.tool,
+        input: invocation.input,
+        callId: invocation.invocationId,
         executionContext: {
           permissions: [],
           executeLegacyTool: ({ legacyName, input: validatedInput }) =>

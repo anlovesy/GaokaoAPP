@@ -17,11 +17,11 @@ This document defines the UI direction for all core pages while preserving exist
 
 These routes currently map to the following implementation files and should remain functionally intact while being visually rebuilt:
 
-- `/` -> [LandingScreen.jsx](/D:/agent/study/GaokaoApp/apps/web/src/pages/landing/LandingScreen.jsx)
-- `/login` -> [AuthScreen.jsx](/D:/agent/study/GaokaoApp/apps/web/src/pages/auth/AuthScreen.jsx)
-- `/workspace` -> [DecisionWorkspaceScreen.jsx](/D:/agent/study/GaokaoApp/apps/web/src/pages/workspace/DecisionWorkspaceScreen.jsx)
-- `/advisor` -> [AdvisorScreen.jsx](/D:/agent/study/GaokaoApp/apps/web/src/pages/advisor/AdvisorScreen.jsx)
-- `/university` -> [UniversityScreen.jsx](/D:/agent/study/GaokaoApp/apps/web/src/pages/university/UniversityScreen.jsx)
+- `/` -> [LandingScreen.jsx](../../apps/web/src/pages/landing/LandingScreen.jsx)
+- `/login` -> [AuthScreen.jsx](../../apps/web/src/pages/auth/AuthScreen.jsx)
+- `/workspace` -> [DecisionWorkspaceScreen.jsx](../../apps/web/src/pages/workspace/DecisionWorkspaceScreen.jsx)
+- `/advisor` -> [AdvisorScreen.jsx](../../apps/web/src/pages/advisor/AdvisorScreen.jsx)
+- `/university` -> [UniversityScreen.jsx](../../apps/web/src/pages/university/UniversityScreen.jsx)
 
 Any visual rewrite must preserve the functional responsibilities already handled by those screens.
 

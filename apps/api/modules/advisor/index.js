@@ -5,6 +5,18 @@ export { createContextBuilder } from "./context/ContextBuilder.js";
 export { createIntentRecognizer } from "./intent/IntentRecognizer.js";
 export { createMemoryEngine } from "./memory/MemoryEngine.js";
 export { createAdvisorPlanner } from "./planning/AdvisorPlanner.js";
+export {
+  ADVISOR_MODEL_TOOL_ALLOWLIST,
+  MODEL_TOOL_SELECTION_BUDGET,
+  AdvisorInvocationPlanner,
+  createAdvisorInvocationPlanner
+} from "./planning/AdvisorInvocationPlanner.js";
+export {
+  TOOL_INVOCATION_SOURCES,
+  ToolInvocationSchema,
+  toolInvocationSchema,
+  validateToolInvocation
+} from "./planning/ToolInvocation.js";
 export { createPersonaEngine } from "./persona/PersonaEngine.js";
 export { createAdvisorResponsePolicy } from "./response/AdvisorResponsePolicy.js";
 export { createReflectionEngine } from "./reflection/ReflectionEngine.js";

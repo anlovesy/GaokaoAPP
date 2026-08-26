@@ -15,18 +15,18 @@ These assets are intended for:
 
 ### Symbol Marks
 
-- [decision-orbit-mark-ink.svg](/D:/agent/study/GaokaoApp/apps/web/public/brand/zhixu/decision-orbit-mark-ink.svg)
-- [decision-orbit-mark-paper.svg](/D:/agent/study/GaokaoApp/apps/web/public/brand/zhixu/decision-orbit-mark-paper.svg)
-- [decision-orbit-mark-coral.svg](/D:/agent/study/GaokaoApp/apps/web/public/brand/zhixu/decision-orbit-mark-coral.svg)
+- [decision-orbit-mark-ink.svg](../apps/web/public/brand/zhixu/decision-orbit-mark-ink.svg)
+- [decision-orbit-mark-paper.svg](../apps/web/public/brand/zhixu/decision-orbit-mark-paper.svg)
+- [decision-orbit-mark-coral.svg](../apps/web/public/brand/zhixu/decision-orbit-mark-coral.svg)
 
 ### Lockups
 
-- [decision-orbit-lockup-horizontal.svg](/D:/agent/study/GaokaoApp/apps/web/public/brand/zhixu/decision-orbit-lockup-horizontal.svg)
-- [decision-orbit-lockup-vertical.svg](/D:/agent/study/GaokaoApp/apps/web/public/brand/zhixu/decision-orbit-lockup-vertical.svg)
+- [decision-orbit-lockup-horizontal.svg](../apps/web/public/brand/zhixu/decision-orbit-lockup-horizontal.svg)
+- [decision-orbit-lockup-vertical.svg](../apps/web/public/brand/zhixu/decision-orbit-lockup-vertical.svg)
 
 ### Small-Size Asset
 
-- [decision-orbit-favicon.svg](/D:/agent/study/GaokaoApp/apps/web/public/brand/zhixu/decision-orbit-favicon.svg)
+- [decision-orbit-favicon.svg](../apps/web/public/brand/zhixu/decision-orbit-favicon.svg)
 
 ## Usage Guidance
 

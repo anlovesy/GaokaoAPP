@@ -20,7 +20,7 @@
 
 直接双击：
 
-- `D:\agent\study\GaokaoApp\tools\start-public-demo.cmd`
+- `tools/start-public-demo.cmd`
 
 脚本会做两件事：
 
@@ -31,13 +31,13 @@
 
 直接双击：
 
-- `D:\agent\study\GaokaoApp\tools\stop-public-demo.cmd`
+- `tools/stop-public-demo.cmd`
 
 ## 如何查看公网链接
 
 开启后，打开这个日志文件：
 
-- `D:\agent\study\GaokaoApp\tools\cloudflared-public.log`
+- `tools/cloudflared-public.log`
 
 里面会有一条类似这样的地址：
 
@@ -56,7 +56,7 @@ https://xxxxxx.trycloudflare.com
 ```powershell
 $env:GAOKAO_DEMO_ADMIN_USERNAME="your_admin"
 $env:GAOKAO_DEMO_ADMIN_PASSWORD="your_strong_password"
-cmd /c D:\agent\study\GaokaoApp\tools\start-public-demo.cmd
+cmd /c tools/start-public-demo.cmd
 ```
 
 如果你直接双击脚本而没有先设置环境变量：
@@ -78,8 +78,8 @@ cmd /c D:\agent\study\GaokaoApp\tools\start-public-demo.cmd
 
 可检查：
 
-- `D:\agent\study\GaokaoApp\tools\project-server-public.log`
-- `D:\agent\study\GaokaoApp\tools\cloudflared-public.log`
+- `tools/project-server-public.log`
+- `tools/cloudflared-public.log`
 
 ### 2. 为什么每次链接都不一样？
 

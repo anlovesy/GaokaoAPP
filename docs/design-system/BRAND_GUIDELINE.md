@@ -14,8 +14,8 @@ This mark should represent:
 
 Supporting references:
 
-- [ZHIXU_LOGO_SYSTEM_DECISION_ORBIT_v1.md](/D:/agent/study/GaokaoApp/docs/ZHIXU_LOGO_SYSTEM_DECISION_ORBIT_v1.md)
-- [ZHIXU_BRAND_GUIDELINE_v1.md](/D:/agent/study/GaokaoApp/docs/ZHIXU_BRAND_GUIDELINE_v1.md)
+- [ZHIXU_LOGO_SYSTEM_DECISION_ORBIT_v1.md](../ZHIXU_LOGO_SYSTEM_DECISION_ORBIT_v1.md)
+- [ZHIXU_BRAND_GUIDELINE_v1.md](../ZHIXU_BRAND_GUIDELINE_v1.md)
 
 ## Brand Keywords
 
@@ -153,7 +153,7 @@ Avoid:
 
 Approved hierarchy lives in:
 
-- [TYPOGRAPHY.md](/D:/agent/study/GaokaoApp/TYPOGRAPHY.md)
+- [TYPOGRAPHY.md](TYPOGRAPHY.md)
 
 ## Color Strategy
 
@@ -164,7 +164,7 @@ Approved hierarchy lives in:
 
 Approved palette lives in:
 
-- [COLOR_SYSTEM.md](/D:/agent/study/GaokaoApp/COLOR_SYSTEM.md)
+- [COLOR_SYSTEM.md](COLOR_SYSTEM.md)
 
 ## Whitespace Strategy
 
@@ -174,7 +174,7 @@ Approved palette lives in:
 
 Approved spacing rules live in:
 
-- [SPACING_SYSTEM.md](/D:/agent/study/GaokaoApp/SPACING_SYSTEM.md)
+- [SPACING_SYSTEM.md](SPACING_SYSTEM.md)
 
 ## Motion Strategy
 
@@ -186,7 +186,7 @@ Approved spacing rules live in:
 
 Approved motion rules live in:
 
-- [MOTION_SPEC.md](/D:/agent/study/GaokaoApp/MOTION_SPEC.md)
+- [MOTION_SPEC.md](MOTION_SPEC.md)
 
 ## Content Philosophy
 

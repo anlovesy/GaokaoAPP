@@ -64,7 +64,11 @@ import {
   importCsvFile,
   saveImportFile
 } from "./services/importService.js";
-import { generateAdvisorReply, listAvailableProviders } from "./services/llmService.js";
+import {
+  generateAdvisorReply,
+  generateAdvisorToolSelection,
+  listAvailableProviders
+} from "./services/llmService.js";
 import { generateVolunteerPlan } from "./services/plannerService.js";
 import { ROLES } from "../shared/rbac.js";
 
@@ -197,7 +201,9 @@ const advisorRuntime = createAdvisorRuntime({
   reflectionEngine: createReflectionEngine(),
   toolRouter: createAdvisorToolRouter({
     entityResolver: createEntityResolver({ getDataEngine }),
-    getDataEngine
+    getDataEngine,
+    selectModelTool: generateAdvisorToolSelection,
+    modelToolSelectionEnabled: process.env.ADVISOR_MODEL_TOOL_SELECTION === "true"
   }),
   generateReply: generateAdvisorReply,
   saveSessionHistory: saveChatSessionHistory,

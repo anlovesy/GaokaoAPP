@@ -7,10 +7,10 @@
 最简单的方式：
 
 1. 双击运行：
-   - `D:\agent\study\GaokaoApp\tools\start-public-demo.cmd`
+   - `tools/start-public-demo.cmd`
 2. 脚本会提示你输入本次公网演示后台密码
 3. 等脚本启动完成后，打开：
-   - `D:\agent\study\GaokaoApp\tools\cloudflared-public.log`
+   - `tools/cloudflared-public.log`
 4. 在日志里找到：
 
 ```text
@@ -21,7 +21,7 @@ https://xxxxxx.trycloudflare.com
 
 关闭时双击：
 
-- `D:\agent\study\GaokaoApp\tools\stop-public-demo.cmd`
+- `tools/stop-public-demo.cmd`
 
 ## 2. 这个链接启动后，我的管理员密码是什么？
 

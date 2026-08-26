@@ -206,32 +206,32 @@ The design system is satisfied only if:
 
 ## Document Map
 
-- [BRAND_GUIDELINE.md](/D:/agent/study/GaokaoApp/BRAND_GUIDELINE.md)
-- [docs/ZHIXU_BRAND_GUIDELINE_v1.md](/D:/agent/study/GaokaoApp/docs/ZHIXU_BRAND_GUIDELINE_v1.md)
-- [docs/ZHIXU_LOGO_SYSTEM_DECISION_ORBIT_v1.md](/D:/agent/study/GaokaoApp/docs/ZHIXU_LOGO_SYSTEM_DECISION_ORBIT_v1.md)
-- [UI_SPEC.md](/D:/agent/study/GaokaoApp/UI_SPEC.md)
-- [MOTION_SPEC.md](/D:/agent/study/GaokaoApp/MOTION_SPEC.md)
-- [COMPONENT_SPEC.md](/D:/agent/study/GaokaoApp/COMPONENT_SPEC.md)
-- [TYPOGRAPHY.md](/D:/agent/study/GaokaoApp/TYPOGRAPHY.md)
-- [COLOR_SYSTEM.md](/D:/agent/study/GaokaoApp/COLOR_SYSTEM.md)
-- [SPACING_SYSTEM.md](/D:/agent/study/GaokaoApp/SPACING_SYSTEM.md)
-- [IMAGE_GUIDELINE.md](/D:/agent/study/GaokaoApp/IMAGE_GUIDELINE.md)
-- [CODEX_RULES.md](/D:/agent/study/GaokaoApp/CODEX_RULES.md)
+- [BRAND_GUIDELINE.md](BRAND_GUIDELINE.md)
+- [docs/ZHIXU_BRAND_GUIDELINE_v1.md](../ZHIXU_BRAND_GUIDELINE_v1.md)
+- [docs/ZHIXU_LOGO_SYSTEM_DECISION_ORBIT_v1.md](../ZHIXU_LOGO_SYSTEM_DECISION_ORBIT_v1.md)
+- [UI_SPEC.md](UI_SPEC.md)
+- [MOTION_SPEC.md](MOTION_SPEC.md)
+- [COMPONENT_SPEC.md](COMPONENT_SPEC.md)
+- [TYPOGRAPHY.md](TYPOGRAPHY.md)
+- [COLOR_SYSTEM.md](COLOR_SYSTEM.md)
+- [SPACING_SYSTEM.md](SPACING_SYSTEM.md)
+- [IMAGE_GUIDELINE.md](IMAGE_GUIDELINE.md)
+- [CODEX_RULES.md](../../CODEX_RULES.md)
 
 ## Priority Order
 
 If documents ever conflict, follow this order:
 
-1. [DESIGN_SYSTEM.md](/D:/agent/study/GaokaoApp/DESIGN_SYSTEM.md)
-2. [BRAND_GUIDELINE.md](/D:/agent/study/GaokaoApp/BRAND_GUIDELINE.md)
-3. [UI_SPEC.md](/D:/agent/study/GaokaoApp/UI_SPEC.md)
-4. [MOTION_SPEC.md](/D:/agent/study/GaokaoApp/MOTION_SPEC.md)
-5. [COMPONENT_SPEC.md](/D:/agent/study/GaokaoApp/COMPONENT_SPEC.md)
-6. [TYPOGRAPHY.md](/D:/agent/study/GaokaoApp/TYPOGRAPHY.md)
-7. [COLOR_SYSTEM.md](/D:/agent/study/GaokaoApp/COLOR_SYSTEM.md)
-8. [SPACING_SYSTEM.md](/D:/agent/study/GaokaoApp/SPACING_SYSTEM.md)
-9. [IMAGE_GUIDELINE.md](/D:/agent/study/GaokaoApp/IMAGE_GUIDELINE.md)
-10. [CODEX_RULES.md](/D:/agent/study/GaokaoApp/CODEX_RULES.md)
+1. [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)
+2. [BRAND_GUIDELINE.md](BRAND_GUIDELINE.md)
+3. [UI_SPEC.md](UI_SPEC.md)
+4. [MOTION_SPEC.md](MOTION_SPEC.md)
+5. [COMPONENT_SPEC.md](COMPONENT_SPEC.md)
+6. [TYPOGRAPHY.md](TYPOGRAPHY.md)
+7. [COLOR_SYSTEM.md](COLOR_SYSTEM.md)
+8. [SPACING_SYSTEM.md](SPACING_SYSTEM.md)
+9. [IMAGE_GUIDELINE.md](IMAGE_GUIDELINE.md)
+10. [CODEX_RULES.md](../../CODEX_RULES.md)
 
 ## Delivery Standard
 
@@ -244,4 +244,4 @@ Every future UI Sprint must:
 
 See:
 
-- [CODEX_RULES.md](/D:/agent/study/GaokaoApp/CODEX_RULES.md)
+- [CODEX_RULES.md](../../CODEX_RULES.md)
